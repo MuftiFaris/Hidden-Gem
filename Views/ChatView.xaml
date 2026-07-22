@@ -1,0 +1,233 @@
+<UserControl x:Class="Assistant.Views.ChatView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:models="clr-namespace:Assistant.Models"
+             mc:Ignorable="d"
+             Background="{StaticResource AppBackgroundBrush}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>   <!-- Message list -->
+            <RowDefinition Height="Auto"/> <!-- Input bar    -->
+        </Grid.RowDefinitions>
+
+        <!-- ════════════════════════════════════════
+             MESSAGE LIST
+             ════════════════════════════════════════ -->
+        <ScrollViewer Grid.Row="0" x:Name="MessagesScroller"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Background="Transparent"
+                      Padding="0,8">
+
+            <ItemsControl x:Name="MessagesList"
+                          ItemsSource="{Binding Messages}"
+                          Padding="16,0">
+
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type models:ChatMessage}">
+                        <!-- Wrapper positions bubble left/right/centre by role -->
+                        <Grid Margin="0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- ── User bubble (right-aligned, col 1 + col 2 edge) ── -->
+                            <Border Grid.Column="1"
+                                    MaxWidth="620"
+                                    MinWidth="60"
+                                    CornerRadius="12,12,2,12"
+                                    Padding="14,10"
+                                    Margin="80,0,0,0">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="{StaticResource UserBubbleBrush}"/>
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Role}"
+                                                         Value="{x:Static models:MessageRole.User}">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Content}"
+                                               Foreground="{StaticResource PrimaryTextBrush}"
+                                               TextWrapping="Wrap"
+                                               FontSize="13"/>
+                                    <TextBlock Text="{Binding Timestamp, Converter={StaticResource TimeConverter}}"
+                                               Foreground="#80FFFFFF"
+                                               FontSize="10"
+                                               HorizontalAlignment="Right"
+                                               Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- ── Assistant bubble (left-aligned, col 0 + col 1 edge) ── -->
+                            <Border Grid.Column="0" Grid.ColumnSpan="2"
+                                    MaxWidth="680"
+                                    MinWidth="60"
+                                    HorizontalAlignment="Left"
+                                    CornerRadius="12,12,12,2"
+                                    Padding="14,10"
+                                    Margin="0,0,80,0">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="{StaticResource AssistantBubbleBrush}"/>
+                                        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+                                        <Setter Property="BorderThickness" Value="1"/>
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Role}"
+                                                         Value="{x:Static models:MessageRole.Assistant}">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <StackPanel>
+                                    <!-- Role label + streaming indicator -->
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                        <TextBlock Text="✨ Gemini"
+                                                   Foreground="{StaticResource AccentBrush}"
+                                                   FontSize="11" FontWeight="SemiBold"/>
+                                        <TextBlock Text=" • thinking…"
+                                                   Foreground="{StaticResource SecondaryTextBrush}"
+                                                   FontSize="11"
+                                                   Visibility="{Binding IsStreaming,
+                                                                Converter={StaticResource BoolToVisibility}}"/>
+                                    </StackPanel>
+
+                                    <TextBlock Text="{Binding Content}"
+                                               TextWrapping="Wrap"
+                                               FontSize="13"
+                                               Foreground="{StaticResource PrimaryTextBrush}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsError}" Value="True">
+                                                        <Setter Property="Foreground" Value="{StaticResource ErrorBrush}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+
+                                    <TextBlock Text="{Binding Timestamp, Converter={StaticResource TimeConverter}}"
+                                               Foreground="{StaticResource MutedTextBrush}"
+                                               FontSize="10"
+                                               HorizontalAlignment="Right"
+                                               Margin="0,4,0,0"
+                                               Visibility="{Binding IsStreaming,
+                                                            Converter={StaticResource InverseBoolToVisibility}}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- ── System message (centred, all 3 cols) ── -->
+                            <Border Grid.Column="0" Grid.ColumnSpan="3"
+                                    HorizontalAlignment="Center"
+                                    MaxWidth="500"
+                                    CornerRadius="6"
+                                    Padding="12,6"
+                                    Background="{StaticResource SystemBubbleBrush}"
+                                    BorderBrush="{StaticResource BorderBrush}"
+                                    BorderThickness="1">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Role}"
+                                                         Value="{x:Static models:MessageRole.System}">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="{Binding Content}"
+                                           TextWrapping="Wrap"
+                                           HorizontalAlignment="Center"
+                                           FontSize="12"
+                                           Foreground="{StaticResource SecondaryTextBrush}"/>
+                            </Border>
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <!-- ════════════════════════════════════════
+             INPUT BAR
+             ════════════════════════════════════════ -->
+        <Border Grid.Row="1"
+                Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="14,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Multi-line input -->
+                <TextBox Grid.Column="0"
+                         x:Name="InputBox"
+                         Style="{StaticResource ModernTextBox}"
+                         Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}"
+                         AcceptsReturn="False"
+                         MaxLines="6"
+                         TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto"
+                         MinHeight="40"
+                         MaxHeight="120"
+                         VerticalContentAlignment="Center"
+                         KeyDown="InputBox_KeyDown">
+                    <!-- Placeholder text -->
+                    <TextBox.Resources>
+                        <Style TargetType="Border"><Setter Property="CornerRadius" Value="8"/></Style>
+                    </TextBox.Resources>
+                </TextBox>
+
+                <!-- Cancel button (visible while streaming) -->
+                <Button Grid.Column="1"
+                        Margin="8,0,0,0"
+                        Style="{StaticResource SecondaryButton}"
+                        Command="{Binding CancelCommand}"
+                        Visibility="{Binding IsSending, Converter={StaticResource BoolToVisibility}}"
+                        ToolTip="Cancel streaming response"
+                        Padding="10,8">
+                    <TextBlock Text="⏹ Stop"/>
+                </Button>
+
+                <!-- Send button -->
+                <Button Grid.Column="2"
+                        Margin="8,0,0,0"
+                        Style="{StaticResource PrimaryButton}"
+                        Command="{Binding SendCommand}"
+                        Padding="16,8">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Send" Margin="0,0,6,0"/>
+                        <TextBlock Text="▶"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- Clear button (top-right overlay, only when messages exist) -->
+        <Button Grid.Row="0"
+                HorizontalAlignment="Right" VerticalAlignment="Top"
+                Margin="0,12,16,0"
+                Style="{StaticResource SecondaryButton}"
+                Command="{Binding ClearCommand}"
+                Padding="8,4"
+                ToolTip="Clear conversation">
+            <TextBlock Text="🗑 Clear" FontSize="11"/>
+        </Button>
+    </Grid>
+</UserControl>
