@@ -32,14 +32,14 @@ A sleek Windows desktop application powered by Google's Gemini API, featuring sc
 
 #### Option 1: Download Installer (Recommended)
 1. Go to [Releases](../../releases/latest)
-2. Download `-Setup-v1.0.0.exe`
+2. Download `HiddenGem-Setup-v1.0.0.exe`
 3. Run installer
 4. Launch from Start Menu
 
 #### Option 2: Build from Source
 ```bash
 git clone https://github.com/MuftiFaris/Hidden-Gem
-cd Assistant
+cd Hidden-Gem
 dotnet restore
 dotnet build -c Release
 ```
