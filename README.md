@@ -36,7 +36,7 @@ A sleek Windows desktop application powered by Google's Gemini API, featuring sc
 
 #### Option 2: Build from Source
 ```bash
-git clone https://github.com/yourusername/microsoft-edge-ai
+git clone https://github.com/MuftiFaris/Hidden-Gem
 cd microsoft-edge-ai
 dotnet restore
 dotnet build -c Release
