@@ -67,3 +67,8 @@ Desktop.ini
 FINAL_SETUP.cmd
 setup-git-commits.cmd
 CHANGES_SUMMARY.md
+CREATE_INSTALLER.md
+REPO_DESCRIPTION.txt
+INSTALLER_SETUP.txt
+innosetup-installer.exe
+install-innosetup.cmd

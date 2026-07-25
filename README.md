@@ -221,13 +221,15 @@ MIT License - See [LICENSE](LICENSE) for details
 - **Gemini API**: Powered by Google's Gemini API - [Terms of Service](https://ai.google.dev/terms)
 - **For Personal/Educational Use**: This project is for learning and personal use
 
-## 🤝 Contributing
+## 🎨 Customization
 
-Contributions welcome! Please:
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push and create a Pull Request
+**This is a template project.** Fork it and customize for your needs:
+- Change branding (see [Customization Guide](#-customization))
+- Modify UI/UX
+- Add your own features
+- Use for personal projects
+
+**Note:** This repo is for sharing the template, not accepting public contributions.
 
 ## ⚠️ Troubleshooting
 
