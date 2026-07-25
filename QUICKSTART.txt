@@ -1,0 +1,179 @@
+╔══════════════════════════════════════════════════════════════════════════╗
+║                   Microsoft Edge - QUICK START                 ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ 1. REQUIREMENTS                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+
+  • Windows 10/11 (64-bit)
+  • .NET 8.0 Desktop Runtime
+    → Download: https://dotnet.microsoft.com/download/dotnet/8.0
+    → Choose: ".NET Desktop Runtime x64"
+  • Gemini API Key (FREE)
+    → Get: https://ai.google.dev/
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ 2. INSTALLATION                                                          │
+└──────────────────────────────────────────────────────────────────────────┘
+
+  A. Using Installer (Recommended)
+     1. Run: MicrosoftEdge-Setup-v1.0.0.exe
+     2. Follow wizard
+     3. Launch from Start Menu
+
+  B. Run Directly (No Install)
+     1. Extract all files
+     2. Run: MicrosoftEdge.exe
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ 3. FIRST-TIME SETUP                                                      │
+└──────────────────────────────────────────────────────────────────────────┘
+
+  1. Click "Settings" in sidebar
+  2. Enter your Gemini API key
+  3. Click "Save & Test"
+  4. Wait for "✓ API key valid"
+  5. Return to Chat
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ 4. BASIC USAGE                                                           │
+└──────────────────────────────────────────────────────────────────────────┘
+
+  CHAT
+  ────
+  • Type message in input box
+  • Press Enter or click Send
+  • AI responds in real-time
+  • Click Cancel to stop
+
+  OVERLAY WINDOW
+  ──────────────
+  • Click "Overlay" in sidebar
+  • Floating window appears
+  • Drag to move
+  • Adjust opacity slider
+  • Pin to keep on top
+
+  VOICE INPUT
+  ───────────
+  • Click 🎤 Voice button
+  • Speak when prompted
+  • Your speech → AI response
+
+  SCREEN ANALYSIS
+  ───────────────
+  • Click 📷 Screen button
+  • Screen captured
+  • AI describes what it sees
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ 5. KEYBOARD SHORTCUTS                                                    │
+└──────────────────────────────────────────────────────────────────────────┘
+
+  Enter           Send message
+  Esc             Cancel generation
+  Alt+F4          Close window
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ 6. PRIVACY FEATURES                                                      │
+└──────────────────────────────────────────────────────────────────────────┘
+
+  PRIVACY MODE
+  ────────────
+  • Toggle: Click 🔒 in sidebar
+  • Blocks screen capture of app window
+  • Not 100% foolproof
+  • Works with: OBS, Game Bar, most recorders
+
+  DATA STORAGE
+  ────────────
+  • API Key: Windows Credential Manager (encrypted)
+  • Settings: %LOCALAPPDATA%\MicrosoftEdge\settings.json
+  • Logs: %LOCALAPPDATA%\MicrosoftEdge\logs\
+  • Conversations: NOT saved by default
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ 7. TROUBLESHOOTING                                                       │
+└──────────────────────────────────────────────────────────────────────────┘
+
+  "No API key found"
+  ──────────────────
+  → Go to Settings
+  → Enter your Gemini API key
+  → Click "Save & Test"
+
+  "Network error"
+  ───────────────
+  → Check internet connection
+  → Verify API key is valid
+  → Check firewall settings
+
+  "Speech not available"
+  ──────────────────────
+  → Windows Settings → Speech
+  → Enable Windows Speech Recognition
+  → Restart application
+
+  ".NET not found"
+  ────────────────
+  → Install .NET 8.0 Desktop Runtime
+  → Link: https://dotnet.microsoft.com/download/dotnet/8.0
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ 8. TIPS & TRICKS                                                         │
+└──────────────────────────────────────────────────────────────────────────┘
+
+  ✓ Use streaming for faster perceived responses
+  ✓ Lower max tokens in Settings for quicker replies
+  ✓ Use system prompt to customize AI behavior
+  ✓ Minimize to tray instead of closing
+  ✓ Pin overlay for always-on-top assistance
+  ✓ Check logs if something goes wrong
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ 9. COMMON QUESTIONS                                                      │
+└──────────────────────────────────────────────────────────────────────────┘
+
+  Q: Is my API key secure?
+  A: Yes. Stored in Windows Credential Manager (encrypted).
+
+  Q: Does this work offline?
+  A: No. Requires internet for Gemini API.
+
+  Q: How much does it cost?
+  A: Free with Gemini free tier (rate limits apply).
+
+  Q: What data is collected?
+  A: Only error logs. Conversations NOT logged by default.
+
+  Q: Can I use other AI models?
+  A: Currently Gemini only. Code can be extended.
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ 10. GETTING HELP                                                         │
+└──────────────────────────────────────────────────────────────────────────┘
+
+  📖 Documentation
+     • README.md
+     • SETUP_GUIDE.md
+     • DEPENDENCIES.md
+
+  📋 Logs
+     • Location: %LOCALAPPDATA%\MicrosoftEdge\logs\
+     • View: Notepad or any text editor
+
+  🔧 Reset Settings
+     • Delete: %LOCALAPPDATA%\MicrosoftEdge\settings.json
+     • Restart application
+
+  🔑 Reset API Key
+     • Control Panel → Credential Manager
+     • Windows Credentials → Find "MicrosoftEdge_ApiKey"
+     • Delete and re-enter in Settings
+
+╔══════════════════════════════════════════════════════════════════════════╗
+║                              ENJOY!                                      ║
+║                                                                          ║
+║  For more info, see README.md or visit https://ai.google.dev/           ║
+╚══════════════════════════════════════════════════════════════════════════╝
