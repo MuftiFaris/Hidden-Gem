@@ -43,13 +43,3 @@ Name: "{userstartup}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: startu
 
 [Run]
 Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent
-
-[Code]
-function InitializeSetup(): Boolean;
-begin
-  Result := True;
-  if not IsDotNetInstalled(net80, 0) then begin
-    MsgBox('.NET 8.0 Desktop Runtime is required. Please install it from https://dotnet.Hidden Gem.com/download/dotnet/8.0', mbError, MB_OK);
-    Result := False;
-  end;
-end;
