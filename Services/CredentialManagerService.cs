@@ -75,7 +75,7 @@ namespace Assistant.Services
                     {
                         Type               = CRED_TYPE_GENERIC,
                         TargetName         = CredentialTarget,
-                        Comment            = "Microsoft Edge — API Key",
+                        Comment            = "Hidden Gem — API Key",
                         CredentialBlobSize = (uint)blob.Length,
                         CredentialBlob     = blobHandle.AddrOfPinnedObject(),
                         Persist            = CRED_PERSIST_LOCAL_MACHINE,

@@ -25,7 +25,7 @@ if %errorlevel% neq 0 goto :error
 echo.
 echo ========================================
 echo Installer created successfully!
-echo Output: installer-output\MicrosoftEdge-Setup-v1.0.0.exe
+echo Output: installer-output\HiddenGem-Setup-v1.0.0.exe
 echo ========================================
 goto :end
 

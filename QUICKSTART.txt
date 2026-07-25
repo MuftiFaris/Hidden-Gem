@@ -1,5 +1,5 @@
 ╔══════════════════════════════════════════════════════════════════════════╗
-║                   Microsoft Edge - QUICK START                 ║
+║                   Hidden Gem - QUICK START                 ║
 ╚══════════════════════════════════════════════════════════════════════════╝
 
 ┌──────────────────────────────────────────────────────────────────────────┐
@@ -18,13 +18,13 @@
 └──────────────────────────────────────────────────────────────────────────┘
 
   A. Using Installer (Recommended)
-     1. Run: MicrosoftEdge-Setup-v1.0.0.exe
+     1. Run: HiddenGem-Setup-v1.0.0.exe
      2. Follow wizard
      3. Launch from Start Menu
 
   B. Run Directly (No Install)
      1. Extract all files
-     2. Run: MicrosoftEdge.exe
+     2. Run: HiddenGem.exe
 
 ┌──────────────────────────────────────────────────────────────────────────┐
 │ 3. FIRST-TIME SETUP                                                      │
@@ -89,8 +89,8 @@
   DATA STORAGE
   ────────────
   • API Key: Windows Credential Manager (encrypted)
-  • Settings: %LOCALAPPDATA%\MicrosoftEdge\settings.json
-  • Logs: %LOCALAPPDATA%\MicrosoftEdge\logs\
+  • Settings: %LOCALAPPDATA%\HiddenGem\settings.json
+  • Logs: %LOCALAPPDATA%\HiddenGem\logs\
   • Conversations: NOT saved by default
 
 ┌──────────────────────────────────────────────────────────────────────────┐
@@ -160,16 +160,16 @@
      • DEPENDENCIES.md
 
   📋 Logs
-     • Location: %LOCALAPPDATA%\MicrosoftEdge\logs\
+     • Location: %LOCALAPPDATA%\HiddenGem\logs\
      • View: Notepad or any text editor
 
   🔧 Reset Settings
-     • Delete: %LOCALAPPDATA%\MicrosoftEdge\settings.json
+     • Delete: %LOCALAPPDATA%\HiddenGem\settings.json
      • Restart application
 
   🔑 Reset API Key
      • Control Panel → Credential Manager
-     • Windows Credentials → Find "MicrosoftEdge_ApiKey"
+     • Windows Credentials → Find "HiddenGem_ApiKey"
      • Delete and re-enter in Settings
 
 ╔══════════════════════════════════════════════════════════════════════════╗

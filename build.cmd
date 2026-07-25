@@ -1,6 +1,6 @@
 @echo off
 echo ========================================
-echo Microsoft Edge - Build Script
+echo Hidden Gem - Build Script
 echo ========================================
 echo.
 

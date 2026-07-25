@@ -5,7 +5,7 @@
 ### For End Users
 
 1. **Download Installer**
-   - Get `MicrosoftEdge-Setup-v1.0.0.exe`
+   - Get `HiddenGem-Setup-v1.0.0.exe`
    - Run installer
    - Follow on-screen instructions
    - Launch from Start Menu
@@ -127,12 +127,12 @@ GeminiAssistant/
 1. Open Control Panel
 2. Credential Manager → Windows Credentials
 3. Add Generic Credential:
-   - Internet/network address: `MicrosoftEdge_ApiKey`
+   - Internet/network address: `HiddenGem_ApiKey`
    - Password: Your API key
 
 #### 2. Logging Configuration
 
-Default location: `%LOCALAPPDATA%\MicrosoftEdge\logs\`
+Default location: `%LOCALAPPDATA%\HiddenGem\logs\`
 
 To change log settings, edit `App.xaml.cs`:
 
@@ -173,7 +173,7 @@ dotnet run
 #### 3. Debugging
 - Set breakpoints in `.cs` files
 - Use Debug Console for output
-- Check logs: `%LOCALAPPDATA%\MicrosoftEdge\logs\`
+- Check logs: `%LOCALAPPDATA%\HiddenGem\logs\`
 
 #### 4. Testing API Integration
 
@@ -246,7 +246,7 @@ dotnet publish -c Release -r win-x64 --self-contained false
    ```
 
 3. **Output**
-   - Location: `installer-output\MicrosoftEdge-Setup-v1.0.0.exe`
+   - Location: `installer-output\HiddenGem-Setup-v1.0.0.exe`
    - Size: ~6 MB (framework-dependent)
 
 #### Customize Installer
@@ -376,12 +376,12 @@ public OverlayWindow()
 
 Check logs first:
 ```cmd
-notepad %LOCALAPPDATA%\MicrosoftEdge\logs\app-*.log
+notepad %LOCALAPPDATA%\HiddenGem\logs\app-*.log
 ```
 
 Common log locations:
-- Application: `%LOCALAPPDATA%\MicrosoftEdge\logs\`
-- Settings: `%LOCALAPPDATA%\MicrosoftEdge\settings.json`
+- Application: `%LOCALAPPDATA%\HiddenGem\logs\`
+- Settings: `%LOCALAPPDATA%\HiddenGem\settings.json`
 - Credentials: Windows Credential Manager
 
 ### Next Steps

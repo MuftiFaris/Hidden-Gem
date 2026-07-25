@@ -77,15 +77,15 @@ dotnet build -c Release
 - `gemini-2.0-flash-exp` - Experimental
 
 ### Settings Location
-- **User Settings**: `%LOCALAPPDATA%\MicrosoftEdge\settings.json`
+- **User Settings**: `%LOCALAPPDATA%\HiddenGem\settings.json`
 - **API Key**: Windows Credential Manager (encrypted)
-- **Logs**: `%LOCALAPPDATA%\MicrosoftEdge\logs\`
+- **Logs**: `%LOCALAPPDATA%\HiddenGem\logs\`
 
 ## 🎨 Customization
 
 ### Changing App Name and Branding
 
-**This app is fully customizable!** By default, it builds as "MicrosoftEdge" for personal use, but you can rebrand it to anything you want.
+**This app is fully customizable!** By default, it builds as "HiddenGem" for personal use, but you can rebrand it to anything you want.
 
 #### Quick Rebrand (Recommended)
 
@@ -266,7 +266,7 @@ dotnet build
 ## 📬 Support
 
 - **Issues**: [GitHub Issues](../../issues)
-- **Logs**: `%LOCALAPPDATA%\MicrosoftEdge\logs\`
+- **Logs**: `%LOCALAPPDATA%\HiddenGem\logs\`
 - **API Status**: [Google Cloud Status](https://status.cloud.google.com/)
 
 ---
