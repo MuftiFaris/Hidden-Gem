@@ -32,7 +32,7 @@ namespace Assistant
                 logger?.LogCritical(ex.Exception, "Unhandled dispatcher exception");
                 MessageBox.Show(
                     $"An unexpected error occurred:\n\n{ex.Exception.Message}",
-                    "Microsoft Edge",
+                    "Hidden Gem",
                     MessageBoxButton.OK, MessageBoxImage.Error);
                 ex.Handled = true;
             };
@@ -86,7 +86,7 @@ namespace Assistant
         {
             var logDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "MicrosoftEdge", "logs");
+                "HiddenGem", "logs");
             Directory.CreateDirectory(logDir);
 
             Log.Logger = new LoggerConfiguration()

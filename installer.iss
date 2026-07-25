@@ -1,10 +1,10 @@
-; Microsoft Edge Installer Script
+; Hidden Gem Installer Script
 ; Inno Setup 6.x required
 
-#define AppName "Microsoft Edge"
+#define AppName "Hidden Gem"
 #define AppVersion "1.0.0"
-#define AppPublisher "Microsoft"
-#define AppExeName "MicrosoftEdge.exe"
+#define AppPublisher "Hidden Gem"
+#define AppExeName "HiddenGem.exe"
 #define AppId "{{3A8F9B2C-7D4E-4F1A-9C5B-2E6D8F3A1C7B}"
 
 [Setup]
@@ -16,7 +16,7 @@ DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppName}
 AllowNoIcons=yes
 OutputDir=.\installer-output
-OutputBaseFilename=MicrosoftEdge-Setup-v{#AppVersion}
+OutputBaseFilename=HiddenGem-Setup-v{#AppVersion}
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -49,7 +49,7 @@ function InitializeSetup(): Boolean;
 begin
   Result := True;
   if not IsDotNetInstalled(net80, 0) then begin
-    MsgBox('.NET 8.0 Desktop Runtime is required. Please install it from https://dotnet.microsoft.com/download/dotnet/8.0', mbError, MB_OK);
+    MsgBox('.NET 8.0 Desktop Runtime is required. Please install it from https://dotnet.Hidden Gem.com/download/dotnet/8.0', mbError, MB_OK);
     Result := False;
   end;
 end;

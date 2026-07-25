@@ -18,7 +18,7 @@ namespace Assistant.Services
     /// </summary>
     public sealed class CredentialManagerService : ICredentialService
     {
-        private const string CredentialTarget = "MicrosoftEdge_ApiKey";
+        private const string CredentialTarget = "HiddenGem_ApiKey";
         private const uint   CRED_TYPE_GENERIC        = 1;
         private const uint   CRED_PERSIST_LOCAL_MACHINE = 2;
         private const int    ERROR_NOT_FOUND           = 1168;

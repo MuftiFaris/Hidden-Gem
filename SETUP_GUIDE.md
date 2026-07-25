@@ -1,4 +1,4 @@
-# Microsoft Edge - Setup Guide
+# Hidden Gem - Setup Guide
 
 ## Quick Start
 

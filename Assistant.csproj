@@ -6,11 +6,11 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <AssemblyName>MicrosoftEdge</AssemblyName>
+    <AssemblyName>HiddenGem</AssemblyName>
     <RootNamespace>Assistant</RootNamespace>
-    <Product>Microsoft Edge</Product>
+    <Product>Hidden Gem</Product>
     <Description>AI-powered desktop companion with screen understanding and voice input</Description>
-    <Company>Microsoft</Company>
+    <Company>Hidden Gem</Company>
     <Copyright>Copyright © 2026</Copyright>
     <Version>1.0.0</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

@@ -89,7 +89,7 @@ dotnet build -c Release
 
 #### Quick Rebrand (Recommended)
 
-Want it to look like Microsoft Edge, Chrome, or your own brand? Change these files:
+Want it to look like a professional app? Change these files:
 
 #### 1. Application Name
 **File**: `Assistant.csproj`
@@ -215,14 +215,11 @@ build-installer.cmd
 
 MIT License - See [LICENSE](LICENSE) for details
 
-**Note**: This project uses "Microsoft Edge" branding as a demonstration. For public/commercial use, please rebrand using the customization guide above.
-
 ## ⚖️ Legal Disclaimer
 
-- **Trademarks**: Microsoft, Edge, and related trademarks are property of Microsoft Corporation
-- **For Educational/Personal Use**: This project is for learning and personal use
-- **Rebrand for Public Use**: Change branding before public distribution
-- **No Affiliation**: Not affiliated with Microsoft or Google
+- **No Affiliation**: Not affiliated with any company
+- **Gemini API**: Powered by Google's Gemini API - [Terms of Service](https://ai.google.dev/terms)
+- **For Personal/Educational Use**: This project is for learning and personal use
 
 ## 🤝 Contributing
 

@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 namespace Assistant.Services
 {
     /// <summary>
-    /// Persists AppSettings as JSON to %LOCALAPPDATA%\MicrosoftEdge\settings.json.
+    /// Persists AppSettings as JSON to %LOCALAPPDATA%\HiddenGem\settings.json.
     /// API keys are NEVER written here; only non-sensitive preferences are stored.
     /// </summary>
     public sealed class SettingsService : ISettingsService
@@ -21,7 +21,7 @@ namespace Assistant.Services
             _logger = logger;
             var dir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "MicrosoftEdge");
+                "HiddenGem");
             Directory.CreateDirectory(dir);
             _path = Path.Combine(dir, "settings.json");
         }

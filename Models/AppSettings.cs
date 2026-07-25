@@ -1,7 +1,7 @@
 namespace Assistant.Models
 {
     /// <summary>
-    /// Persisted user preferences stored as JSON in %LOCALAPPDATA%\MicrosoftEdge\settings.json.
+    /// Persisted user preferences stored as JSON in %LOCALAPPDATA%\HiddenGem\settings.json.
     /// API keys are NEVER stored here — they live in Windows Credential Manager.
     /// </summary>
     public class AppSettings
