@@ -1,4 +1,4 @@
-# Microsoft Edge - AI Desktop Companion
+# Hidden Gem - AI Desktop Companion
 
 A sleek Windows desktop application powered by Google's Gemini API, featuring screen understanding, voice input, and an always-on-top overlay window.
 
@@ -6,6 +6,8 @@ A sleek Windows desktop application powered by Google's Gemini API, featuring sc
 ![.NET](https://img.shields.io/badge/.NET-8.0-purple)
 ![Platform](https://img.shields.io/badge/platform-Windows%2010/11-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-green)
+
+> 💡 **Fully customizable branding** - Change app name, icon, and appearance to match your preferences. See [Customization Guide](#-customization) below.
 
 ## ✨ Features
 
@@ -83,7 +85,11 @@ dotnet build -c Release
 
 ### Changing App Name and Branding
 
-Want to use your own branding? Here's where to make changes:
+**This app is fully customizable!** By default, it builds as "MicrosoftEdge" for personal use, but you can rebrand it to anything you want.
+
+#### Quick Rebrand (Recommended)
+
+Want it to look like Microsoft Edge, Chrome, or your own brand? Change these files:
 
 #### 1. Application Name
 **File**: `Assistant.csproj`
@@ -208,6 +214,15 @@ build-installer.cmd
 ## 📝 License
 
 MIT License - See [LICENSE](LICENSE) for details
+
+**Note**: This project uses "Microsoft Edge" branding as a demonstration. For public/commercial use, please rebrand using the customization guide above.
+
+## ⚖️ Legal Disclaimer
+
+- **Trademarks**: Microsoft, Edge, and related trademarks are property of Microsoft Corporation
+- **For Educational/Personal Use**: This project is for learning and personal use
+- **Rebrand for Public Use**: Change branding before public distribution
+- **No Affiliation**: Not affiliated with Microsoft or Google
 
 ## 🤝 Contributing
 
