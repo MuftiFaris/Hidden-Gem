@@ -15,6 +15,12 @@ namespace Assistant.ViewModels
         private readonly IGeminiService     _gemini;
         private readonly ILogger<SettingsViewModel> _logger;
 
+        // ── Validation caching (prevent rate limit) ──────────────────────────
+        private string _lastValidatedKey = string.Empty;
+        private bool _lastValidationResult;
+        private DateTime _lastValidationTime = DateTime.MinValue;
+        private const int ValidationCacheDurationMs = 300000;  // 5 minutes
+
         // ── API Key state ──────────────────────────────────────────────────────
 
         private string _apiKeyInput        = string.Empty;
@@ -247,6 +253,18 @@ namespace Assistant.ViewModels
                 return;
             }
 
+            // Check cache first - prevent rate limiting from repeated tests
+            if (key == _lastValidatedKey && 
+                (DateTime.UtcNow - _lastValidationTime).TotalMilliseconds < ValidationCacheDurationMs)
+            {
+                ApiKeyStatus = _lastValidationResult 
+                    ? "✅  API key is valid! (cached - retest in 5 min)"
+                    : "❌  API key validation failed. (cached result)";
+                IsApiKeyStatusError = !_lastValidationResult;
+                _logger.LogInformation("API key validation result from cache");
+                return;
+            }
+
             IsValidating = true;
             ApiKeyStatus = "🔄  Validating API key…";
             IsApiKeyStatusError = false;
@@ -255,11 +273,16 @@ namespace Assistant.ViewModels
             {
                 bool valid = await _gemini.ValidateApiKeyAsync(key);
 
+                // Cache the result
+                _lastValidatedKey = key;
+                _lastValidationResult = valid;
+                _lastValidationTime = DateTime.UtcNow;
+
                 IsValidating        = false;
                 IsApiKeyStatusError = !valid;
                 ApiKeyStatus        = valid
                     ? "✅  API key is valid! You can now save it."
-                    : "❌  API key validation failed. Check logs for details (View → Developer Tools).";
+                    : "❌  API key validation failed. Check format or permissions.";
                 
                 if (valid)
                 {
@@ -270,7 +293,17 @@ namespace Assistant.ViewModels
             {
                 IsValidating = false;
                 IsApiKeyStatusError = true;
-                ApiKeyStatus = $"❌  Validation error: {ex.Message}";
+                
+                // Check if it's a rate limit error
+                if (ex.Message.Contains("429") || ex.Message.Contains("rate limit") || ex.Message.Contains("Rate limited"))
+                {
+                    ApiKeyStatus = "⏱️  Rate limit hit! Free tier: 15 requests/minute. Wait 1 minute and try again.";
+                }
+                else
+                {
+                    ApiKeyStatus = $"❌  Validation error: {ex.Message}";
+                }
+                
                 _logger.LogError(ex, "API key validation failed");
             }
         }

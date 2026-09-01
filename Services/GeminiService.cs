@@ -204,8 +204,19 @@ namespace Assistant.Services
 
                 if (!resp.IsSuccessStatusCode)
                 {
-                    _logger.LogError("Validation failed: {StatusCode} - {Response}", 
-                        (int)resp.StatusCode, raw);
+                    var msg = $"HTTP {(int)resp.StatusCode}";
+                    
+                    if ((int)resp.StatusCode == 429)
+                    {
+                        msg = "429 - Rate limited! Free tier: 15 requests/minute";
+                        _logger.LogWarning("Rate limit hit during validation");
+                    }
+                    else if ((int)resp.StatusCode == 401)
+                    {
+                        msg = "401 - Unauthorized (invalid API key)";
+                    }
+                    
+                    _logger.LogError("Validation failed: {Message} - {Response}", msg, raw);
                 }
 
                 return resp.IsSuccessStatusCode;
