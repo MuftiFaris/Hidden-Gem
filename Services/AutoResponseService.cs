@@ -212,26 +212,43 @@ namespace Assistant.Services
 
         private string BuildPrompt(string question, string? context)
         {
-            var prompt = $"I am in an interview and received this question:\n\n\"{question}\"";
-
+            var prompt = "TASK: Interview assistance with visual context.\n\n";
+            prompt += "QUESTION:\n" + question + "\n\n";
+            
             if (!string.IsNullOrEmpty(context))
             {
-                prompt += $"\n\nAdditional context: {context}";
+                prompt += "ADDITIONAL CONTEXT:\n" + context + "\n\n";
             }
 
-            prompt += "\n\nProvide a professional, concise, and helpful response. " +
-                     "Keep it conversational and avoid sounding scripted.";
+            prompt += "INSTRUCTIONS:\n" +
+                     "1. Analyze the screenshot carefully (shows the current screen state)\n" +
+                     "2. If the screenshot shows an error, problem, or code - provide SOLUTION\n" +
+                     "3. If the question asks about what's on screen - describe and solve it\n" +
+                     "4. If it's a general interview question - answer based on screen context\n" +
+                     "5. Provide professional, actionable answers\n" +
+                     "6. Keep responses concise (2-3 sentences)\n" +
+                     "7. Do NOT describe the screenshot - analyze and solve the problem\n\n" +
+                     "RESPONSE:";
 
             return prompt;
         }
 
         private string GetAutoResponseSystemPrompt()
         {
-            return "You are an AI interview assistant. Your role is to help the user respond to interview " +
-                   "questions by providing accurate, professional, and thoughtful answers. " +
-                   "Be concise (2-3 sentences for most questions), friendly, and avoid overly formal language. " +
-                   "If the question is unclear, ask for clarification. If you don't know the answer, suggest " +
-                   "researching or provide a thoughtful generic response.";
+            return "You are an expert interview assistant and technical problem solver.\n\n" +
+                   "Your role is to:\n" +
+                   "1. ANALYZE the screenshot carefully for errors, code, or problems\n" +
+                   "2. SOLVE issues shown on screen (provide actionable solutions)\n" +
+                   "3. ANSWER interview questions with reference to screen context\n" +
+                   "4. PROVIDE working solutions if code/errors are visible\n" +
+                   "5. EXPLAIN clearly and professionally\n\n" +
+                   "Guidelines:\n" +
+                   "- If you see an error message, explain the cause and solution\n" +
+                   "- If you see code, analyze it and answer questions about it\n" +
+                   "- If you see a problem, provide step-by-step solution\n" +
+                   "- Keep responses short and actionable (2-3 sentences)\n" +
+                   "- Sound natural and conversational, not robotic\n" +
+                   "- Always reference what you see on screen";
         }
 
         private bool MatchesPattern(string text, string pattern, bool caseSensitive)

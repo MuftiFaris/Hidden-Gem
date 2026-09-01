@@ -64,12 +64,31 @@ namespace Assistant.Services
                 _logger.LogInformation("Starting speech recognition");
                 IsRecordingChanged?.Invoke(this, true);
                 
+                // Use RecognizeAsync with proper timeout handling
                 _recognizer.RecognizeAsync(RecognizeMode.Single);
 
-                // Wait for recognition or cancellation
-                using (ct.Register(() => _recognitionTcs?.TrySetCanceled()))
+                // Wait for recognition with timeout
+                using (ct.Register(() => 
                 {
-                    var result = await _recognitionTcs.Task;
+                    _logger.LogInformation("Speech recognition cancelled via token");
+                    _recognizer.RecognizeAsyncCancel();
+                    _recognitionTcs?.TrySetResult(_recognizedText);
+                }))
+                {
+                    // Add timeout to prevent infinite waiting
+                    var timeoutTask = Task.Delay(TimeSpan.FromSeconds(30), ct);
+                    var resultTask = _recognitionTcs.Task;
+                    
+                    var completedTask = await Task.WhenAny(resultTask, timeoutTask).ConfigureAwait(false);
+                    
+                    if (completedTask == timeoutTask)
+                    {
+                        _logger.LogWarning("Speech recognition timeout after 30 seconds");
+                        _recognizer.RecognizeAsyncCancel();
+                        return _recognizedText;
+                    }
+                    
+                    var result = await resultTask.ConfigureAwait(false);
                     _logger.LogInformation("Speech recognized: {Length} characters", result.Length);
                     return result;
                 }
@@ -78,7 +97,7 @@ namespace Assistant.Services
             {
                 _logger.LogInformation("Speech recognition cancelled");
                 _recognizer.RecognizeAsyncCancel();
-                return _recognizedText; // Return partial result
+                return _recognizedText;
             }
             finally
             {
@@ -94,6 +113,12 @@ namespace Assistant.Services
                 var culture = CultureInfo.CurrentCulture;
                 var recognizers = SpeechRecognitionEngine.InstalledRecognizers();
                 
+                if (recognizers.Count == 0)
+                {
+                    _logger.LogError("No speech recognizers installed on this system");
+                    return;
+                }
+
                 var recognizer = recognizers.FirstOrDefault(r => r.Culture.Equals(culture));
                 if (recognizer == null)
                 {
@@ -104,6 +129,8 @@ namespace Assistant.Services
                 if (recognizer == null)
                 {
                     _logger.LogWarning("No speech recognizer found for culture {Culture}", culture.Name);
+                    _logger.LogWarning("Available recognizers: {Recognizers}", 
+                        string.Join(", ", recognizers.Select(r => r.Culture.Name)));
                     return;
                 }
 
@@ -111,20 +138,33 @@ namespace Assistant.Services
                 
                 _recognizer.LoadGrammar(new DictationGrammar());
                 
-                _recognizer.SetInputToDefaultAudioDevice();
+                // Try to set input device - verify microphone is available
+                try
+                {
+                    _recognizer.SetInputToDefaultAudioDevice();
+                    _logger.LogInformation("Microphone input device set successfully");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to set microphone input device - check microphone permissions");
+                    return;
+                }
                 
-                _recognizer.EndSilenceTimeout = TimeSpan.FromSeconds(1.5);
-                _recognizer.InitialSilenceTimeout = TimeSpan.FromSeconds(5);
-                _recognizer.BabbleTimeout = TimeSpan.FromSeconds(3);
+                // Adjust timeouts for better detection
+                _recognizer.EndSilenceTimeout = TimeSpan.FromSeconds(1.0);     // Shorter end silence
+                _recognizer.InitialSilenceTimeout = TimeSpan.FromSeconds(10);   // Longer initial wait
+                _recognizer.BabbleTimeout = TimeSpan.FromSeconds(2);            // Shorter babble timeout
                 
-                _recognizer.UpdateRecognizerSetting("CFGConfidenceRejectionThreshold", 60);
+                // Lower confidence threshold for better detection
+                _recognizer.UpdateRecognizerSetting("CFGConfidenceRejectionThreshold", 30);  // From 60 to 30
                 _recognizer.UpdateRecognizerSetting("AdaptationOn", 1);
 
                 _recognizer.SpeechRecognized += OnSpeechRecognized;
                 _recognizer.SpeechRecognitionRejected += OnSpeechRejected;
                 _recognizer.RecognizeCompleted += OnRecognizeCompleted;
 
-                _logger.LogInformation("Speech recognizer initialized with voice isolation: {Culture}", recognizer.Culture.Name);
+                _logger.LogInformation("Speech recognizer initialized successfully: {Culture} (threshold 30%, timeout 10s)", 
+                    recognizer.Culture.Name);
             }
             catch (Exception ex)
             {
@@ -134,25 +174,40 @@ namespace Assistant.Services
 
         private void OnSpeechRecognized(object? sender, SpeechRecognizedEventArgs e)
         {
-            if (e.Result.Confidence > 0.5f) // Only accept confident results
+            if (e.Result.Confidence > 0.3f) // Lower threshold from 0.5 to 0.3 for better detection
             {
                 _recognizedText = e.Result.Text;
-                _logger.LogDebug("Speech recognized with confidence {Confidence}: {Text}", 
+                _logger.LogInformation("Speech recognized with confidence {Confidence}: {Text}", 
                     e.Result.Confidence, e.Result.Text);
             }
             else
             {
-                _logger.LogDebug("Low confidence speech rejected: {Confidence}", e.Result.Confidence);
+                _logger.LogDebug("Low confidence speech rejected: {Confidence} (threshold 0.3)", e.Result.Confidence);
             }
         }
 
         private void OnSpeechRejected(object? sender, SpeechRecognitionRejectedEventArgs e)
         {
-            _logger.LogDebug("Speech recognition rejected");
+            _logger.LogWarning("Speech recognition rejected - no recognizable speech detected");
         }
 
         private void OnRecognizeCompleted(object? sender, RecognizeCompletedEventArgs e)
         {
+            if (e.Error != null)
+            {
+                _logger.LogError(e.Error, "Speech recognition error");
+                _recognitionTcs?.TrySetResult(_recognizedText);
+                return;
+            }
+
+            if (e.Cancelled)
+            {
+                _logger.LogInformation("Speech recognition cancelled by system");
+                _recognitionTcs?.TrySetResult(_recognizedText);
+                return;
+            }
+
+            _logger.LogInformation("Speech recognition completed. Result length: {Length}", _recognizedText.Length);
             _recognitionTcs?.TrySetResult(_recognizedText);
         }
 
