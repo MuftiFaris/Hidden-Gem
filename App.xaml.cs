@@ -69,10 +69,14 @@ namespace Assistant
             sc.AddSingleton<IGeminiService,     GeminiService>();
             sc.AddSingleton<IScreenCaptureService, ScreenCaptureService>();
             sc.AddSingleton<ISpeechService,     SpeechService>();
+            sc.AddSingleton<IAudioCaptureService, AudioCaptureService>();
+            sc.AddSingleton<IAudioTranscriptionService, AudioTranscriptionService>();
+            sc.AddSingleton<IAutoResponseService, AutoResponseService>();
 
             // View-models (singletons so nav state persists between page switches)
             sc.AddSingleton<ChatViewModel>();
             sc.AddSingleton<SettingsViewModel>();
+            sc.AddSingleton<InterviewViewModel>();
             sc.AddSingleton<MainViewModel>();
 
             // Windows

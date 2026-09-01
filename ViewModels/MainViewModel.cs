@@ -28,6 +28,7 @@ namespace Assistant.ViewModels
         // ── Child view-models (set by DI) ──────────────────────────────────────
         public ChatViewModel     ChatVM     { get; }
         public SettingsViewModel SettingsVM { get; }
+        public InterviewViewModel InterviewVM { get; }
 
         // ── Bindable state ─────────────────────────────────────────────────────
 
@@ -80,12 +81,14 @@ namespace Assistant.ViewModels
         public MainViewModel(
             ChatViewModel      chatVM,
             SettingsViewModel  settingsVM,
+            InterviewViewModel interviewVM,
             ISettingsService   settingsSvc,
             ILogger<MainViewModel> logger,
             IServiceProvider services)
         {
             ChatVM      = chatVM;
             SettingsVM  = settingsVM;
+            InterviewVM = interviewVM;
             _settingsSvc = settingsSvc;
             _logger      = logger;
             _services    = services;
@@ -105,14 +108,21 @@ namespace Assistant.ViewModels
                 IsChatSelected = false;
             });
 
+            var navigateToInterviewCommand = new RelayCommand(_ =>
+            {
+                CurrentView    = InterviewVM;
+                IsChatSelected = false;  // Interview is not Chat
+            });
+
             TogglePrivacyModeCommand = new RelayCommand(_ =>
                 IsPrivacyModeEnabled = !IsPrivacyModeEnabled);
 
             ShowOverlayCommand = new RelayCommand(_ =>
             {
-                if (_overlayWindow == null || !_overlayWindow.IsLoaded)
+                if (_overlayWindow == null || !_overlayWindow.IsVisible)
                 {
                     _overlayWindow = (OverlayWindow)_services.GetService(typeof(OverlayWindow))!;
+                    _overlayWindow.Closed += (s, e) => _overlayWindow = null;
                     _overlayWindow.Show();
                     StatusMessage = "Overlay window opened";
                 }
