@@ -141,8 +141,25 @@ namespace Assistant
                 ResponseText.Text = "🤖 Analyzing screen...";
 
                 var settings = new Models.AppSettings();
+                
+                // Enhanced prompt - analyze AND solve what's on screen
+                var prompt = @"ANALYZE THIS SCREENSHOT CAREFULLY:
+
+1. IDENTIFY: What applications, errors, code, or problems are visible?
+2. EXPLAIN: What is happening on screen?
+3. SOLVE: If there's an error or problem, provide the solution
+4. ANSWER: Be ready to answer questions about this screen
+
+Provide a comprehensive analysis. If you see:
+- ERROR MESSAGES: Explain what went wrong and how to fix it
+- CODE: Analyze it and explain what it does
+- PROBLEMS: Provide step-by-step solutions
+- UI: Describe what you see and what actions are available
+
+Do NOT just describe. ANALYZE and PROVIDE ACTIONABLE INSIGHTS.";
+
                 var response = await _gemini.SendVisionMessageAsync(
-                    "Describe what you see in this screenshot. What applications or content are visible?",
+                    prompt,
                     base64,
                     apiKey,
                     settings);
