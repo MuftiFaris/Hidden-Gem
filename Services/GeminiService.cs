@@ -36,7 +36,7 @@ namespace Assistant.Services
         // ── Service-level rate limiting (backup protection) ──────────────────
         private static DateTime _lastServiceApiCall = DateTime.MinValue;
         private static readonly object _rateLimitLock = new object();
-        private const int MinMsPerServiceCall = 5000;  // 5 seconds minimum between any API calls
+        private const int MinMsPerServiceCall = 10000;  // 10 seconds minimum between any API calls
 
         public GeminiService(ILogger<GeminiService> logger)
         {

@@ -26,7 +26,7 @@ namespace Assistant.ViewModels
 
         // ── Rate limiting (free tier: 15 requests/minute) ──────────────────────
         private DateTime _lastApiRequestTime = DateTime.MinValue;
-        private const int MinMsPerRequest = 5000;  // 5 seconds per request (12 requests/minute) - safer than theoretical 15
+        private const int MinMsPerRequest = 10000;  // 10 seconds per request (6 requests/minute) - safest for free tier
 
         // ── Bindable state ─────────────────────────────────────────────────────
 
@@ -139,9 +139,8 @@ namespace Assistant.ViewModels
 
             try
             {
-                // Record request time BEFORE making API call
-                _lastApiRequestTime = DateTime.UtcNow;
-
+                // Record request time AFTER successful completion (see finally block)
+                
                 if (_settings.UseStreaming)
                 {
                     await foreach (var chunk in _gemini.SendMessageStreamAsync(history, apiKey, _settings, token)
@@ -199,6 +198,10 @@ namespace Assistant.ViewModels
                 });
                 _cts?.Dispose();
                 _cts = null;
+                
+                // Only record time if response was successful (not error)
+                if (assistantMsg.Content.Length > 0 && !assistantMsg.IsError)
+                    _lastApiRequestTime = DateTime.UtcNow;
             }
         }
 
