@@ -352,15 +352,39 @@ namespace Assistant.Services
             }
             catch { /* ignore parse errors in error path */ }
 
-            var msg = err?.Message ?? $"HTTP {(int)resp.StatusCode} {resp.ReasonPhrase}";
+            string msg = err?.Message ?? $"HTTP {(int)resp.StatusCode} {resp.ReasonPhrase}";
             
-            // Improve rate limit error message
-            if ((int)resp.StatusCode == 429)
+            // Detailed error messages for common issues
+            switch ((int)resp.StatusCode)
             {
-                msg = "⏱️ Rate limit exceeded. Free tier allows 15 requests/minute. Please wait 60 seconds and try again.";
+                case 400:
+                    msg = "❌ Bad Request. Check: API key format (starts with 'AIza'), model name, or request format.";
+                    break;
+                case 401:
+                    msg = "❌ Unauthorized. Your API key is invalid or expired. Get a new key at https://ai.google.dev/";
+                    break;
+                case 403:
+                    msg = "❌ Forbidden. API access denied. Check billing status or API permissions at Google Cloud Console.";
+                    break;
+                case 404:
+                    msg = "❌ Model not found. Check model name (e.g., 'gemini-3.5-flash'). Model may not exist or be available in your region.";
+                    break;
+                case 429:
+                    msg = "⏱️ Rate limited. Free tier: 15 requests/minute. Wait 60 seconds and try again.";
+                    break;
+                case 500:
+                case 502:
+                case 503:
+                    msg = "⚠️ Gemini API server error. Service may be temporarily down. Try again in a few seconds.";
+                    break;
+                default:
+                    if (err?.Message != null)
+                        msg = $"{err.Message} (HTTP {(int)resp.StatusCode})";
+                    break;
             }
             
-            _logger.LogError("Gemini API error {Code}: {Message}", (int)resp.StatusCode, msg);
+            _logger.LogError("Gemini API error {Code}: {Message}\nRaw response: {Raw}", 
+                (int)resp.StatusCode, msg, raw);
             throw new GeminiApiException(msg, (int)resp.StatusCode);
         }
 
