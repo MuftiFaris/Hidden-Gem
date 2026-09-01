@@ -24,6 +24,10 @@ namespace Assistant.ViewModels
         private AppSettings _settings;
         private CancellationTokenSource? _cts;
 
+        // ── Rate limiting (free tier: 15 requests/minute) ──────────────────────
+        private DateTime _lastApiRequestTime = DateTime.MinValue;
+        private const int MinMsPerRequest = 4100;  // ~15 requests per minute (60000ms / 15 = 4000ms)
+
         // ── Bindable state ─────────────────────────────────────────────────────
 
         /// <summary>The full conversation shown in the chat list.</summary>
@@ -115,6 +119,15 @@ namespace Assistant.ViewModels
             };
             Messages.Add(assistantMsg);
 
+            // 3. Rate limiting: enforce min delay between requests (15 req/min = ~4100ms per request)
+            var timeSinceLastRequest = (DateTime.UtcNow - _lastApiRequestTime).TotalMilliseconds;
+            if (timeSinceLastRequest < MinMsPerRequest)
+            {
+                var delayMs = (int)(MinMsPerRequest - timeSinceLastRequest);
+                _logger.LogInformation("Rate limit prevention: waiting {Ms}ms before next request", delayMs);
+                await Task.Delay(delayMs).ConfigureAwait(false);
+            }
+
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
 
@@ -126,6 +139,9 @@ namespace Assistant.ViewModels
 
             try
             {
+                // Record request time BEFORE making API call
+                _lastApiRequestTime = DateTime.UtcNow;
+
                 if (_settings.UseStreaming)
                 {
                     await foreach (var chunk in _gemini.SendMessageStreamAsync(history, apiKey, _settings, token)
