@@ -19,6 +19,11 @@ A sleek Windows desktop application powered by Google's Gemini API, featuring sc
 - **🔐 Secure Storage** - API keys stored in Windows Credential Manager
 - **📊 Real-time Streaming** - See AI responses as they're generated
 - **🎨 Modern UI** - Clean WPF interface with transparency effects
+- **🎯 Interview Assistant** - Auto-respond to interview questions (NEW!)
+  - Captures audio from Zoom, Discord, GMeet speakers
+  - Transcribes questions automatically
+  - Generates intelligent responses with screen context
+  - Perfect for quick reference during live interviews
 
 ## 🚀 Quick Start
 
@@ -62,6 +67,25 @@ dotnet build -c Release
 1. Click **📷 Screen** button
 2. Screen is captured automatically
 3. AI describes what it sees
+
+### Interview Assistant (NEW!)
+1. Go to **Interview** tab
+2. Click **🎤 Start Listening** to begin audio capture from Zoom/Discord/GMeet
+3. Enable **Auto-Response** toggle
+4. System automatically:
+   - Listens for interview questions
+   - Captures screen context
+   - Generates intelligent answers
+   - Displays response for review
+5. Copy response to clipboard and paste into chat
+6. Review exchange history below
+
+#### Interview Features
+- **Real-time Audio Capture**: Captures speaker audio from any app
+- **Question Detection**: Recognizes patterns (e.g., "tell me about", "how would you")
+- **Smart Context**: Combines screen + audio for informed responses
+- **History Tracking**: Keeps record of all Q&A exchanges
+- **Copy-to-Clipboard**: Quick paste into chat or anywhere
 
 ### Overlay Window
 - Click **Overlay** in sidebar
