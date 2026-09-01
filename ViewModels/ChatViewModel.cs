@@ -26,7 +26,7 @@ namespace Assistant.ViewModels
 
         // ── Rate limiting (free tier: 15 requests/minute) ──────────────────────
         private DateTime _lastApiRequestTime = DateTime.MinValue;
-        private const int MinMsPerRequest = 4100;  // ~15 requests per minute (60000ms / 15 = 4000ms)
+        private const int MinMsPerRequest = 5000;  // 5 seconds per request (12 requests/minute) - safer than theoretical 15
 
         // ── Bindable state ─────────────────────────────────────────────────────
 

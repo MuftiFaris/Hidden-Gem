@@ -32,6 +32,11 @@ namespace Assistant.Services
         private readonly HttpClient            _http;
         private readonly ILogger<GeminiService> _logger;
         private readonly JsonSerializerOptions  _json;
+        
+        // ── Service-level rate limiting (backup protection) ──────────────────
+        private static DateTime _lastServiceApiCall = DateTime.MinValue;
+        private static readonly object _rateLimitLock = new object();
+        private const int MinMsPerServiceCall = 5000;  // 5 seconds minimum between any API calls
 
         public GeminiService(ILogger<GeminiService> logger)
         {
@@ -42,6 +47,25 @@ namespace Assistant.Services
                 PropertyNameCaseInsensitive  = true,
                 DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
             };
+        }
+
+        /// <summary>Enforces service-level rate limiting (5 sec between calls).</summary>
+        private async Task EnforceServiceRateLimitAsync()
+        {
+            int delayMs = 0;
+            lock (_rateLimitLock)
+            {
+                var elapsed = (DateTime.UtcNow - _lastServiceApiCall).TotalMilliseconds;
+                if (elapsed < MinMsPerServiceCall)
+                {
+                    delayMs = (int)(MinMsPerServiceCall - elapsed);
+                    _logger.LogDebug("Service rate limit: waiting {Ms}ms", delayMs);
+                }
+                _lastServiceApiCall = DateTime.UtcNow;
+            }
+            
+            if (delayMs > 0)
+                await Task.Delay(delayMs).ConfigureAwait(false);
         }
 
         // ── Non-streaming ─────────────────────────────────────────────────────
@@ -57,6 +81,9 @@ namespace Assistant.Services
                 _logger.LogError("API key is null or empty");
                 throw new GeminiApiException("API key is required", 401);
             }
+
+            // Enforce service-level rate limiting
+            await EnforceServiceRateLimitAsync().ConfigureAwait(false);
 
             var request = BuildRequest(history, settings);
             var url     = $"{BaseUrl}/{settings.SelectedModel}:generateContent?key={apiKey}";
@@ -105,6 +132,9 @@ namespace Assistant.Services
                 _logger.LogError("API key is null or empty");
                 throw new GeminiApiException("API key is required", 401);
             }
+
+            // Enforce service-level rate limiting
+            await EnforceServiceRateLimitAsync().ConfigureAwait(false);
 
             var request    = BuildRequest(history, settings);
             var url        = $"{BaseUrl}/{settings.SelectedModel}:streamGenerateContent?alt=sse&key={apiKey}";

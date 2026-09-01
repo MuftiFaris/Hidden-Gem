@@ -19,7 +19,7 @@ namespace Assistant.ViewModels
         private string _lastValidatedKey = string.Empty;
         private bool _lastValidationResult;
         private DateTime _lastValidationTime = DateTime.MinValue;
-        private const int ValidationCacheDurationMs = 300000;  // 5 minutes
+        private const int ValidationCacheDurationMs = 120000;  // 2 minutes (safer than 5)
 
         // ── API Key state ──────────────────────────────────────────────────────
 
@@ -268,6 +268,9 @@ namespace Assistant.ViewModels
             IsValidating = true;
             ApiKeyStatus = "🔄  Validating API key…";
             IsApiKeyStatusError = false;
+
+            // Add delay to prevent rapid-fire validation requests
+            await Task.Delay(500).ConfigureAwait(false);
 
             try
             {
