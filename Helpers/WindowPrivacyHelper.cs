@@ -5,33 +5,10 @@ using Microsoft.Extensions.Logging;
 namespace Assistant.Helpers
 {
     /// <summary>
-    /// Wraps the SetWindowDisplayAffinity Windows API to implement "privacy mode".
-    ///
-    /// HOW IT WORKS
-    /// ────────────
-    /// SetWindowDisplayAffinity instructs the DWM (Desktop Window Manager) to limit
-    /// where a window's pixels can appear.  The relevant values are:
-    ///
-    ///   WDA_NONE (0x0000)              — default; no restriction
-    ///   WDA_MONITOR (0x0001)           — GDI-based capture (BitBlt, PrintWindow) sees
-    ///                                    a black rectangle instead of the window content
-    ///   WDA_EXCLUDEFROMCAPTURE (0x0011)— Added in Windows 10 2004 (build 19041).
-    ///                                    Also excludes the window from the Windows
-    ///                                    Graphics Capture API (WGC) used by Snipping Tool,
-    ///                                    Xbox Game Bar, Microsoft Teams share, etc.
-    ///
-    /// KNOWN LIMITATIONS (always disclose to users)
-    /// ────────────────────────────────────────────
-    ///   ✗  OBS Studio in "Window Capture" mode uses its own injection path and may
-    ///      still capture the content depending on the capture method chosen.
-    ///   ✗  Hardware-level recording (GPU overlays, HDMI capture cards) is unaffected.
-    ///   ✗  RDP / TeamViewer / remote desktop software operate at a different layer
-    ///      and are generally not restricted.
-    ///   ✗  Older or non-DWM-aware screen recorders using raw GDI may behave differently.
-    ///   ✗  WDA_EXCLUDEFROMCAPTURE requires Windows 10 version 2004+; on older builds
-    ///      the call falls back to WDA_MONITOR which provides partial protection.
-    ///
-    /// API documentation: https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowdisplayaffinity
+    /// Wraps SetWindowDisplayAffinity Windows API for "privacy mode".
+    /// Blocks Windows Graphics Capture API (Snipping Tool, Xbox Game Bar, Teams).
+    /// Does NOT block: Zoom, OBS, hardware recorders, RDP, TeamViewer.
+    /// Requires Windows 10 2004+.
     /// </summary>
     public static class WindowPrivacyHelper
     {

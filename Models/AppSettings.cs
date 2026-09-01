@@ -7,7 +7,7 @@ namespace Assistant.Models
     public class AppSettings
     {
         // ── Model ────────────────────────────────────────────────────────────
-        public string SelectedModel      { get; set; } = "gemini-1.5-flash";
+        public string SelectedModel      { get; set; } = "gemini-3.5-flash";
         public double Temperature        { get; set; } = 0.7;
         public int    MaxOutputTokens    { get; set; } = 2048;
         public bool   UseStreaming       { get; set; } = true;

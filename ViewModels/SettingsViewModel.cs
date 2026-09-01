@@ -60,7 +60,7 @@ namespace Assistant.ViewModels
 
         // ── Model settings (two-way bound to controls) ─────────────────────────
 
-        private string _selectedModel   = "gemini-1.5-flash";
+        private string _selectedModel   = "gemini-3.5-flash";
         private double _temperature     = 0.7;
         private int    _maxTokens       = 2048;
         private bool   _useStreaming    = true;
@@ -128,10 +128,10 @@ namespace Assistant.ViewModels
 
         public List<string> AvailableModels { get; } = new()
         {
-            "gemini-1.5-flash",
-            "gemini-1.5-pro",
-            "gemini-2.0-flash-exp",
-            "gemini-2.5-flash-preview-05-20",
+            "gemini-3.5-flash",
+            "gemini-3.6-flash",
+            "gemini-pro-latest",
+            "gemini-3.5-pro",
         };
 
         // ── Commands ───────────────────────────────────────────────────────────
@@ -232,17 +232,47 @@ namespace Assistant.ViewModels
         private async Task ValidateApiKeyAsync()
         {
             var key = ApiKeyInput.Trim();
+            
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                IsApiKeyStatusError = true;
+                ApiKeyStatus = "❌  Please enter an API key";
+                return;
+            }
+
+            if (!key.StartsWith("AIza", StringComparison.Ordinal))
+            {
+                IsApiKeyStatusError = true;
+                ApiKeyStatus = "❌  Invalid format. Gemini API keys start with 'AIza'";
+                return;
+            }
+
             IsValidating = true;
             ApiKeyStatus = "🔄  Validating API key…";
             IsApiKeyStatusError = false;
 
-            bool valid = await _gemini.ValidateApiKeyAsync(key);
+            try
+            {
+                bool valid = await _gemini.ValidateApiKeyAsync(key);
 
-            IsValidating        = false;
-            IsApiKeyStatusError = !valid;
-            ApiKeyStatus        = valid
-                ? "✅  API key is valid! You can now save it."
-                : "❌  API key is invalid or has no Gemini access.";
+                IsValidating        = false;
+                IsApiKeyStatusError = !valid;
+                ApiKeyStatus        = valid
+                    ? "✅  API key is valid! You can now save it."
+                    : "❌  API key validation failed. Check logs for details (View → Developer Tools).";
+                
+                if (valid)
+                {
+                    _logger.LogInformation("API key validated successfully");
+                }
+            }
+            catch (Exception ex)
+            {
+                IsValidating = false;
+                IsApiKeyStatusError = true;
+                ApiKeyStatus = $"❌  Validation error: {ex.Message}";
+                _logger.LogError(ex, "API key validation failed");
+            }
         }
 
         // ── Settings persistence ───────────────────────────────────────────────

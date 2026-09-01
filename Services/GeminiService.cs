@@ -181,6 +181,8 @@ namespace Assistant.Services
         {
             try
             {
+                _logger.LogInformation("Validating API key (length: {Length})", apiKey?.Length ?? 0);
+
                 var req = new GeminiRequest
                 {
                     Contents = new List<GeminiContent>
@@ -190,15 +192,27 @@ namespace Assistant.Services
                     GenerationConfig = new GenerationConfig { MaxOutputTokens = 5 }
                 };
 
-                var url  = $"{BaseUrl}/gemini-1.5-flash:generateContent?key={apiKey}";
+                var url  = $"{BaseUrl}/gemini-3.5-flash:generateContent?key={apiKey}";
                 var body = Serialize(req);
 
+                _logger.LogDebug("Validation URL: {Url}", url.Replace(apiKey ?? "", "***KEY***"));
+
                 using var resp = await _http.PostAsync(url, body, ct).ConfigureAwait(false);
+                var raw = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+
+                _logger.LogInformation("Validation response: {StatusCode}", (int)resp.StatusCode);
+
+                if (!resp.IsSuccessStatusCode)
+                {
+                    _logger.LogError("Validation failed: {StatusCode} - {Response}", 
+                        (int)resp.StatusCode, raw);
+                }
+
                 return resp.IsSuccessStatusCode;
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "API key validation request failed");
+                _logger.LogError(ex, "API key validation exception");
                 return false;
             }
         }
@@ -219,7 +233,7 @@ namespace Assistant.Services
             }
 
             // Use vision-capable model
-            var model = "gemini-1.5-flash";
+            var model = "gemini-3.5-flash";
             var request = new GeminiRequest
             {
                 Contents = new List<GeminiContent>
@@ -339,6 +353,13 @@ namespace Assistant.Services
             catch { /* ignore parse errors in error path */ }
 
             var msg = err?.Message ?? $"HTTP {(int)resp.StatusCode} {resp.ReasonPhrase}";
+            
+            // Improve rate limit error message
+            if ((int)resp.StatusCode == 429)
+            {
+                msg = "⏱️ Rate limit exceeded. Free tier allows 15 requests/minute. Please wait 60 seconds and try again.";
+            }
+            
             _logger.LogError("Gemini API error {Code}: {Message}", (int)resp.StatusCode, msg);
             throw new GeminiApiException(msg, (int)resp.StatusCode);
         }

@@ -1,6 +1,8 @@
 using System;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Interop;
+using Assistant.Helpers;
 using Assistant.Services;
 using Microsoft.Extensions.Logging;
 
@@ -30,9 +32,17 @@ namespace Assistant
 
             InitializeComponent();
             
-            // Start with semi-transparent
             this.Opacity = 0.95;
             OpacitySlider.Value = 0.95;
+            
+            this.SourceInitialized += OverlayWindow_SourceInitialized;
+        }
+
+        private void OverlayWindow_SourceInitialized(object? sender, EventArgs e)
+        {
+            var hwnd = new WindowInteropHelper(this).Handle;
+            WindowPrivacyHelper.SetPrivacyMode(hwnd, true, _logger);
+            _logger.LogInformation("Overlay privacy mode enabled");
         }
 
         private void Border_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

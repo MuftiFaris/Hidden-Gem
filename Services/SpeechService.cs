@@ -109,18 +109,22 @@ namespace Assistant.Services
 
                 _recognizer = new SpeechRecognitionEngine(recognizer.Id);
                 
-                // Load dictation grammar for free-form speech
                 _recognizer.LoadGrammar(new DictationGrammar());
                 
-                // Set input to default audio device
                 _recognizer.SetInputToDefaultAudioDevice();
+                
+                _recognizer.EndSilenceTimeout = TimeSpan.FromSeconds(1.5);
+                _recognizer.InitialSilenceTimeout = TimeSpan.FromSeconds(5);
+                _recognizer.BabbleTimeout = TimeSpan.FromSeconds(3);
+                
+                _recognizer.UpdateRecognizerSetting("CFGConfidenceRejectionThreshold", 60);
+                _recognizer.UpdateRecognizerSetting("AdaptationOn", 1);
 
-                // Hook up events
                 _recognizer.SpeechRecognized += OnSpeechRecognized;
                 _recognizer.SpeechRecognitionRejected += OnSpeechRejected;
                 _recognizer.RecognizeCompleted += OnRecognizeCompleted;
 
-                _logger.LogInformation("Speech recognizer initialized: {Culture}", recognizer.Culture.Name);
+                _logger.LogInformation("Speech recognizer initialized with voice isolation: {Culture}", recognizer.Culture.Name);
             }
             catch (Exception ex)
             {

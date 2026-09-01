@@ -20,7 +20,7 @@ namespace Assistant.Services
     {
         private const string CredentialTarget = "HiddenGem_ApiKey";
         private const uint   CRED_TYPE_GENERIC        = 1;
-        private const uint   CRED_PERSIST_LOCAL_MACHINE = 2;
+        private const uint   CRED_PERSIST_ENTERPRISE = 3;
         private const int    ERROR_NOT_FOUND           = 1168;
 
         private readonly ILogger<CredentialManagerService> _logger;
@@ -78,7 +78,7 @@ namespace Assistant.Services
                         Comment            = "Hidden Gem — API Key",
                         CredentialBlobSize = (uint)blob.Length,
                         CredentialBlob     = blobHandle.AddrOfPinnedObject(),
-                        Persist            = CRED_PERSIST_LOCAL_MACHINE,
+                        Persist            = CRED_PERSIST_ENTERPRISE,
                         UserName           = Environment.UserName
                     };
 

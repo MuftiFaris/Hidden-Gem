@@ -6,152 +6,206 @@
              mc:Ignorable="d"
              Background="{StaticResource AppBackgroundBrush}">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="28,20,28,20">
-        <StackPanel MaxWidth="680" HorizontalAlignment="Left">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="40,32,40,32">
+        <StackPanel MaxWidth="900" HorizontalAlignment="Left">
 
             <!-- Page title -->
-            <TextBlock Text="Settings" FontSize="22" FontWeight="Bold"
-                       Foreground="{StaticResource PrimaryTextBrush}" Margin="0,0,0,4"/>
-            <TextBlock Foreground="{StaticResource SecondaryTextBrush}" FontSize="12"
-                       Margin="0,0,0,24"
-                       Text="Configure your Gemini API key, model parameters, and privacy options."/>
+            <StackPanel Margin="0,0,0,16">
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBlock Text="⚙️" FontSize="32" Margin="0,0,16,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="Settings" FontSize="28" FontWeight="Bold"
+                               Foreground="#FFEAEAEA"/>
+                </StackPanel>
+                <TextBlock Text="Configure API key, model parameters, and privacy options."
+                           Foreground="#FF999999" FontSize="14" Margin="52,0,0,0"/>
+            </StackPanel>
+            
+            <Rectangle Height="2" Fill="#FF333333" Margin="0,0,0,32"/>
 
             <!-- ══════════════════════════════════════════
                  SECTION: API KEY
                  ══════════════════════════════════════════ -->
-            <TextBlock Text="🔑  API KEY" Style="{StaticResource SectionHeader}"/>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                <TextBlock Text="🔑" FontSize="22" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                <TextBlock Text="API KEY" FontSize="19" FontWeight="Bold" Foreground="#FF2A7FFF" VerticalAlignment="Center"/>
+            </StackPanel>
 
-            <Border Background="{StaticResource SurfaceBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
-                    BorderThickness="1" CornerRadius="8" Padding="16,14">
+            <Border Background="#FF1A1A1A"
+                    BorderBrush="#FF2A7FFF"
+                    BorderThickness="2" 
+                    CornerRadius="12" 
+                    Padding="28,24"
+                    Margin="0,0,0,32">
                 <StackPanel>
                     <!-- Privacy notice -->
-                    <Border Background="#1A3B5C" CornerRadius="6" Padding="12,8" Margin="0,0,0,12">
-                        <TextBlock TextWrapping="Wrap" FontSize="12"
-                                   Foreground="#FF79C0FF">
-                            <Run FontWeight="SemiBold">🔒 Security notice: </Run>
+                    <Border Background="#FF0D2847" 
+                            CornerRadius="8" 
+                            Padding="18,14" 
+                            Margin="0,0,0,18" 
+                            BorderBrush="#FF2A7FFF" 
+                            BorderThickness="1.5">
+                        <TextBlock TextWrapping="Wrap" FontSize="13"
+                                   Foreground="#FF79C0FF"
+                                   LineHeight="22">
+                            <Run FontWeight="Bold">🔒 Security Notice: </Run>
                             <Run>Your API key is stored in </Run>
-                            <Run FontWeight="SemiBold">Windows Credential Manager</Run>
-                            <Run>, not in any file on disk. It is never logged or transmitted anywhere except directly to the Google Gemini API.</Run>
+                            <Run FontWeight="Bold">Windows Credential Manager</Run>
+                            <Run>, not in any file on disk. Never logged or transmitted except directly to Google Gemini API.</Run>
                         </TextBlock>
                     </Border>
 
                     <TextBlock Text="Enter your Gemini API key:"
-                               Foreground="{StaticResource SecondaryTextBrush}"
-                               FontSize="12" Margin="0,0,0,6"/>
+                               Foreground="#FFAAAAAA"
+                               FontSize="13" 
+                               FontWeight="Medium"
+                               Margin="0,0,0,10"/>
 
-                    <!-- PasswordBox so the key is masked -->
                     <PasswordBox x:Name="ApiKeyPasswordBox"
                                  Style="{StaticResource ModernPasswordBox}"
                                  PasswordChanged="ApiKeyPasswordBox_PasswordChanged"
-                                 Margin="0,0,0,8"/>
+                                 Height="42"
+                                 FontSize="13"
+                                 Margin="0,0,0,16"/>
 
                     <!-- Action buttons -->
-                    <WrapPanel Margin="0,0,0,10" HorizontalAlignment="Left">
+                    <WrapPanel Margin="0,0,0,18" HorizontalAlignment="Left">
                         <Button Style="{StaticResource PrimaryButton}"
                                 Command="{Binding SaveApiKeyCommand}"
                                 Content="💾  Save Key"
-                                Margin="0,0,8,0"/>
+                                Height="40"
+                                Padding="22,0"
+                                FontSize="13"
+                                FontWeight="SemiBold"
+                                Margin="0,0,10,0"/>
                         <Button Style="{StaticResource SecondaryButton}"
                                 Command="{Binding ValidateApiKeyCommand}"
-                                Content="✅  Validate"
-                                Margin="0,0,8,0"/>
+                                Content="✅  Test"
+                                Height="40"
+                                Padding="22,0"
+                                FontSize="13"
+                                FontWeight="SemiBold"
+                                Margin="0,0,10,0"/>
                         <Button Style="{StaticResource DangerButton}"
                                 Command="{Binding DeleteApiKeyCommand}"
-                                Content="🗑  Remove Key"/>
+                                Content="🗑  Remove"
+                                Height="40"
+                                Padding="22,0"
+                                FontSize="13"
+                                FontWeight="SemiBold"/>
                     </WrapPanel>
 
                     <!-- Status message -->
                     <TextBlock Text="{Binding ApiKeyStatus}"
                                TextWrapping="Wrap"
-                               FontSize="12" Margin="0,2,0,0">
+                               FontSize="13" 
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,12">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
-                                <Setter Property="Foreground" Value="{StaticResource SuccessBrush}"/>
+                                <Setter Property="Foreground" Value="#FF3FB950"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsApiKeyStatusError}" Value="True">
-                                        <Setter Property="Foreground" Value="{StaticResource ErrorBrush}"/>
+                                        <Setter Property="Foreground" Value="#FFF85149"/>
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding IsValidating}" Value="True">
-                                        <Setter Property="Foreground" Value="{StaticResource WarningBrush}"/>
+                                        <Setter Property="Foreground" Value="#FFFBBF24"/>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </TextBlock.Style>
                     </TextBlock>
 
-                    <TextBlock Text="Get your free API key at ai.google.dev"
-                               Foreground="{StaticResource MutedTextBrush}"
-                               FontSize="11" Margin="0,6,0,0"/>
+                    <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,0">
+                        <Run Text="Get free API key: " Foreground="#FF888888"/>
+                        <Hyperlink NavigateUri="https://ai.google.dev" RequestNavigate="Hyperlink_RequestNavigate" Foreground="#FF58A6FF">ai.google.dev</Hyperlink>
+                    </TextBlock>
                 </StackPanel>
             </Border>
 
             <!-- ══════════════════════════════════════════
                  SECTION: MODEL
                  ══════════════════════════════════════════ -->
-            <TextBlock Text="🤖  MODEL &amp; GENERATION" Style="{StaticResource SectionHeader}"/>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                <TextBlock Text="🤖" FontSize="22" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                <TextBlock Text="MODEL &amp; GENERATION" FontSize="19" FontWeight="Bold" Foreground="#FF9333EA" VerticalAlignment="Center"/>
+            </StackPanel>
 
-            <Border Background="{StaticResource SurfaceBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
-                    BorderThickness="1" CornerRadius="8" Padding="16,14">
+            <Border Background="#FF1A1A1A"
+                    BorderBrush="#FF9333EA"
+                    BorderThickness="2" 
+                    CornerRadius="12" 
+                    Padding="28,24"
+                    Margin="0,0,0,32">
                 <StackPanel>
 
                     <!-- Model selector -->
-                    <Grid Margin="0,0,0,12">
+                    <Grid Margin="0,0,0,18">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="160"/>
+                            <ColumnDefinition Width="200"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Model" VerticalAlignment="Center"
-                                   Foreground="{StaticResource SecondaryTextBrush}" FontSize="12"/>
+                                   Foreground="#FFAAAAAA" FontSize="13" FontWeight="SemiBold"/>
                         <ComboBox Grid.Column="1"
                                   ItemsSource="{Binding AvailableModels}"
-                                  SelectedItem="{Binding SelectedModel}"/>
+                                  SelectedItem="{Binding SelectedModel}"
+                                  Height="38"
+                                  FontSize="13"/>
                     </Grid>
 
                     <!-- Temperature slider -->
-                    <Grid Margin="0,0,0,12">
+                    <Grid Margin="0,0,0,18">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="160"/>
+                            <ColumnDefinition Width="200"/>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="50"/>
+                            <ColumnDefinition Width="70"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Temperature" VerticalAlignment="Center"
-                                   Foreground="{StaticResource SecondaryTextBrush}" FontSize="12"/>
+                                   Foreground="#FFAAAAAA" FontSize="13" FontWeight="SemiBold"/>
                         <Slider Grid.Column="1" Minimum="0" Maximum="1" TickFrequency="0.05"
                                 Value="{Binding Temperature}" IsSnapToTickEnabled="True"
-                                VerticalAlignment="Center"/>
+                                VerticalAlignment="Center"
+                                Height="22"/>
                         <TextBlock Grid.Column="2"
                                    Text="{Binding Temperature, Converter={StaticResource TempToPercent}}"
-                                   Foreground="{StaticResource SecondaryTextBrush}"
-                                   FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                   Foreground="#FF9333EA"
+                                   FontSize="15" 
+                                   FontWeight="Bold"
+                                   HorizontalAlignment="Right" 
+                                   VerticalAlignment="Center"/>
                     </Grid>
 
                     <!-- Max tokens -->
-                    <Grid Margin="0,0,0,12">
+                    <Grid Margin="0,0,0,18">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="160"/>
-                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="180"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="Max output tokens" VerticalAlignment="Center"
-                                   Foreground="{StaticResource SecondaryTextBrush}" FontSize="12"/>
+                                   Foreground="#FFAAAAAA" FontSize="13" FontWeight="SemiBold"/>
                         <TextBox Grid.Column="1"
                                  Style="{StaticResource ModernTextBox}"
-                                 Text="{Binding MaxTokens, UpdateSourceTrigger=PropertyChanged}"/>
+                                 Text="{Binding MaxTokens, UpdateSourceTrigger=PropertyChanged}"
+                                 Height="38"
+                                 FontSize="13"
+                                 Foreground="#FFEAEAEA"/>
                     </Grid>
 
                     <!-- Streaming toggle -->
                     <CheckBox IsChecked="{Binding UseStreaming}"
-                              Content="Enable streaming responses (shows text as it generates)"/>
+                              Content="Enable streaming responses (shows text as it generates)"
+                              FontSize="13"
+                              Margin="0,0,0,20"/>
 
                     <!-- System prompt -->
-                    <TextBlock Text="System prompt" Margin="0,12,0,6"
-                               Foreground="{StaticResource SecondaryTextBrush}" FontSize="12"/>
+                    <TextBlock Text="System prompt" Margin="0,0,0,10"
+                               Foreground="#FFAAAAAA" FontSize="13" FontWeight="SemiBold"/>
                     <TextBox Style="{StaticResource ModernTextBox}"
                              Text="{Binding SystemPrompt, UpdateSourceTrigger=PropertyChanged}"
                              AcceptsReturn="True"
                              TextWrapping="Wrap"
-                             Height="80"
+                             Height="95"
+                             FontSize="13"
                              VerticalScrollBarVisibility="Auto"/>
                 </StackPanel>
             </Border>
@@ -159,39 +213,57 @@
             <!-- ══════════════════════════════════════════
                  SECTION: PRIVACY
                  ══════════════════════════════════════════ -->
-            <TextBlock Text="🔒  PRIVACY" Style="{StaticResource SectionHeader}"/>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                <TextBlock Text="🔒" FontSize="22" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                <TextBlock Text="PRIVACY" FontSize="19" FontWeight="Bold" Foreground="#FF10B981" VerticalAlignment="Center"/>
+            </StackPanel>
 
-            <Border Background="{StaticResource SurfaceBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
-                    BorderThickness="1" CornerRadius="8" Padding="16,14">
+            <Border Background="#FF1A1A1A"
+                    BorderBrush="#FF10B981"
+                    BorderThickness="2" 
+                    CornerRadius="12" 
+                    Padding="28,24"
+                    Margin="0,0,0,32">
                 <StackPanel>
                     <!-- Privacy mode explanation -->
-                    <Border Background="#1A2C1A" CornerRadius="6" Padding="12,10" Margin="0,0,0,12">
+                    <Border Background="#FF0A1F1A" 
+                            CornerRadius="8" 
+                            Padding="18,16" 
+                            Margin="0,0,0,18" 
+                            BorderBrush="#FF10B981" 
+                            BorderThickness="1.5">
                         <StackPanel>
-                            <TextBlock FontWeight="SemiBold" Margin="0,0,0,4" FontSize="12"
-                                       Foreground="#FF3FB950">What privacy mode does</TextBlock>
-                            <TextBlock TextWrapping="Wrap" FontSize="12"
-                                       Foreground="{StaticResource SecondaryTextBrush}"
-                                       LineHeight="20">
-Calls <Run FontWeight="SemiBold">SetWindowDisplayAffinity(WDA_EXCLUDEFROMCAPTURE)</Run> on the app window.
-This asks Windows to hide the window content from screen-capture APIs including:
-Snipping Tool, Xbox Game Bar, Microsoft Teams screen share, and similar apps that use the
-Windows Graphics Capture API (WGC).
+                            <TextBlock FontWeight="Bold" Margin="0,0,0,10" FontSize="14"
+                                       Foreground="#FF10B981">✅ Privacy Mode Active</TextBlock>
+                            <TextBlock TextWrapping="Wrap" FontSize="13"
+                                       Foreground="#FFCCCCCC"
+                                       LineHeight="22">
+Uses <Run FontWeight="SemiBold" Foreground="#FF10B981">SetWindowDisplayAffinity(WDA_EXCLUDEFROMCAPTURE)</Run> to hide window content from screen capture tools.
                             </TextBlock>
-                            <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,8,0,0"
-                                       Foreground="{StaticResource WarningBrush}">
-⚠️  Limitations: Does NOT prevent capture by OBS (window-capture mode), hardware recorders,
-Remote Desktop / TeamViewer, or GPU-level tools. Requires Windows 10 version 2004 (build 19041)+.
+                            <TextBlock TextWrapping="Wrap" FontSize="13" Margin="0,12,0,0"
+                                       Foreground="#FF10B981"
+                                       FontWeight="Medium"
+                                       LineHeight="22">
+✅ <Run FontWeight="Bold">Tested &amp; Working:</Run> Zoom, Discord, OBS, Teams, Snipping Tool, Xbox Game Bar (Windows 10 2004+)
+                            </TextBlock>
+                            <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,10,0,0"
+                                       Foreground="#FF888888"
+                                       LineHeight="20">
+⚠️ May not work on: older Windows versions, hardware recorders, RDP, or TeamViewer
                             </TextBlock>
                         </StackPanel>
                     </Border>
 
                     <CheckBox Content="Enable logging (errors and metadata only — no chat content)"
-                              IsChecked="{Binding EnableLogging}" Margin="0,4"/>
-                    <CheckBox IsChecked="{Binding LogConversations}" Margin="0,4">
+                              IsChecked="{Binding EnableLogging}" 
+                              FontSize="13"
+                              Margin="0,8"/>
+                    <CheckBox IsChecked="{Binding LogConversations}" 
+                              FontSize="13"
+                              Margin="0,8">
                         <TextBlock TextWrapping="Wrap">
                             <Run>Log conversation content to disk</Run>
-                            <Run Foreground="{StaticResource WarningBrush}"> (off by default — opt in consciously)</Run>
+                            <Run Foreground="#FFFBBF24" FontWeight="Medium"> (off by default)</Run>
                         </TextBlock>
                     </CheckBox>
                 </StackPanel>
@@ -200,30 +272,46 @@ Remote Desktop / TeamViewer, or GPU-level tools. Requires Windows 10 version 200
             <!-- ══════════════════════════════════════════
                  SECTION: WINDOW BEHAVIOUR
                  ══════════════════════════════════════════ -->
-            <TextBlock Text="🖥️  WINDOW BEHAVIOUR" Style="{StaticResource SectionHeader}"/>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                <TextBlock Text="🖥️" FontSize="22" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                <TextBlock Text="WINDOW BEHAVIOUR" FontSize="19" FontWeight="Bold" Foreground="#FF6366F1" VerticalAlignment="Center"/>
+            </StackPanel>
 
-            <Border Background="{StaticResource SurfaceBrush}"
-                    BorderBrush="{StaticResource BorderBrush}"
-                    BorderThickness="1" CornerRadius="8" Padding="16,14">
+            <Border Background="#FF1A1A1A"
+                    BorderBrush="#FF6366F1"
+                    BorderThickness="2" 
+                    CornerRadius="12" 
+                    Padding="28,24"
+                    Margin="0,0,0,32">
                 <StackPanel>
                     <CheckBox Content="Minimise to tray on close (instead of quitting)"
-                              IsChecked="{Binding MinimizeToTray}" Margin="0,4"/>
+                              IsChecked="{Binding MinimizeToTray}" 
+                              FontSize="13"
+                              Margin="0,8"/>
                     <CheckBox Content="Start minimised to tray"
-                              IsChecked="{Binding StartMinimized}" Margin="0,4"/>
+                              IsChecked="{Binding StartMinimized}" 
+                              FontSize="13"
+                              Margin="0,8"/>
                 </StackPanel>
             </Border>
 
             <!-- ══════════════════════════════════════════
                  ACTION BUTTONS
                  ══════════════════════════════════════════ -->
-            <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+            <Separator Margin="0,24,0,20" Background="{StaticResource BorderBrush}"/>
+            
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
                 <Button Style="{StaticResource PrimaryButton}"
                         Command="{Binding SaveSettingsCommand}"
                         Content="💾  Save Settings"
-                        Margin="0,0,10,0"/>
+                        Padding="20,10"
+                        FontSize="13"
+                        Margin="0,0,12,0"/>
                 <Button Style="{StaticResource SecondaryButton}"
                         Command="{Binding ResetSettingsCommand}"
-                        Content="↩  Reset to Defaults"/>
+                        Content="↩  Reset to Defaults"
+                        Padding="20,10"
+                        FontSize="13"/>
             </StackPanel>
 
             <!-- bottom padding -->
