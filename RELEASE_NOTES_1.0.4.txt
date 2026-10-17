@@ -1,0 +1,22 @@
+Hidden Gem 1.0.4
+===============
+- Select text in questions and answers; copy messages or the whole conversation.
+- Common Markdown formatting: headings, bold/italic, lists, tables, quotes, links, inline code, fenced code.
+- Code blocks have a Copy code action. Message export offers DOCX, Markdown, and plain text.
+- Export chat includes questions and answers. Save dialogs let users choose a destination.
+- DOCX generation runs locally and does not require Microsoft Word.
+- Completed non-error messages can be exported. Streaming responses are rendered incrementally.
+- Enter sends; Shift+Enter inserts a line break.
+- New general-purpose default persona covers writing, coding, documents, analysis, and other tasks.
+- Existing custom system prompts are preserved. Use default persona restores only the prompt; Save settings applies it.
+- The old built-in generic prompt is upgraded to the new default when settings load.
+
+Scope:
+This adds common chat formatting and local document export, not every ChatGPT tool.
+Exports save the selected response or conversation; the model cannot claim a file already exists before export.
+External images are not downloaded automatically. Links are opened only on an explicit user click.
+
+Validation:
+Chat renders at 414 and 768 pixels; Markdown and streaming parser checks pass.
+DOCX package structure, content, tables, numbering, and styles were checked and opened with python-docx.
+Word/LibreOffice page rendering was unavailable in this environment, so final Office page layout was not visually verified.
