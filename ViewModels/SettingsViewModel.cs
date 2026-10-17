@@ -1,338 +1,193 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using System.Collections.ObjectModel;
 using Assistant.Helpers;
 using Assistant.Models;
 using Assistant.Services;
 using Microsoft.Extensions.Logging;
 
-namespace Assistant.ViewModels
+namespace Assistant.ViewModels;
+
+public sealed class SettingsViewModel : BaseViewModel
 {
-    public sealed class SettingsViewModel : BaseViewModel
+    private readonly ICredentialService _creds;
+    private readonly ISettingsService _settings;
+    private readonly IGeminiService _gemini;
+    private readonly ILogger<SettingsViewModel> _logger;
+    private string _apiKeyInput = "", _status = "", _settingsStatus = "";
+    private bool _hasKey, _busy, _error, _inputErrors;
+    private string _model = "auto", _prompt = "";
+    private double _temperature = 0.7;
+    private int _tokens = 2048, _timeout = 45;
+    private string _provider = "Gemini", _routerUrl = "http://localhost:20128/v1", _speechModel = "";
+    private string _geminiModel = "auto", _routerModel = "";
+    public IReadOnlyList<string> AvailableProviders { get; } = new[] { "Gemini", "9Router" };
+    public string Provider
     {
-        private readonly ICredentialService _creds;
-        private readonly ISettingsService   _settingsSvc;
-        private readonly IGeminiService     _gemini;
-        private readonly ILogger<SettingsViewModel> _logger;
-
-        // ── Validation caching (prevent rate limit) ──────────────────────────
-        private string _lastValidatedKey = string.Empty;
-        private bool _lastValidationResult;
-        private DateTime _lastValidationTime = DateTime.MinValue;
-        private const int ValidationCacheDurationMs = 120000;  // 2 minutes (safer than 5)
-
-        // ── API Key state ──────────────────────────────────────────────────────
-
-        private string _apiKeyInput        = string.Empty;
-        private string _apiKeyStatus       = string.Empty;
-        private bool   _hasApiKey;
-        private bool   _isValidating;
-        private bool   _isApiKeyStatusError;
-
-        public string ApiKeyInput
+        get => _provider;
+        set
         {
-            get => _apiKeyInput;
-            set
-            {
-                SetProperty(ref _apiKeyInput, value);
-                SaveApiKeyCommand.RaiseCanExecuteChanged();
-                ValidateApiKeyCommand.RaiseCanExecuteChanged();
-            }
+            if (value == _provider || value is not ("Gemini" or "9Router")) return;
+            if (_provider == "Gemini") _geminiModel = SelectedModel; else _routerModel = SelectedModel;
+            SetProperty(ref _provider, value);
+            OnPropertyChanged(nameof(IsRouterProvider)); OnPropertyChanged(nameof(IsGeminiProvider));
+            ApiKeyInput = ""; HasApiKey = _creds.HasApiKey(Provider);
+            AvailableModels.Clear();
+            if (IsGeminiProvider) AvailableModels.Add("auto");
+            SelectedModel = IsRouterProvider ? _routerModel : _geminiModel;
+            if (!string.IsNullOrWhiteSpace(SelectedModel) && !AvailableModels.Contains(SelectedModel)) AvailableModels.Add(SelectedModel);
+            ApiKeyStatus = HasApiKey ? "Key saved for this provider. Refresh models and test the connection." : "Save this provider's API key, then refresh models.";
+            RefreshCommands();
         }
-
-        public string ApiKeyStatus
-        {
-            get => _apiKeyStatus;
-            private set => SetProperty(ref _apiKeyStatus, value);
-        }
-
-        public bool HasApiKey
-        {
-            get => _hasApiKey;
-            private set { SetProperty(ref _hasApiKey, value); DeleteApiKeyCommand.RaiseCanExecuteChanged(); }
-        }
-
-        public bool IsValidating
-        {
-            get => _isValidating;
-            private set => SetProperty(ref _isValidating, value);
-        }
-
-        public bool IsApiKeyStatusError
-        {
-            get => _isApiKeyStatusError;
-            private set => SetProperty(ref _isApiKeyStatusError, value);
-        }
-
-        // ── Model settings (two-way bound to controls) ─────────────────────────
-
-        private string _selectedModel   = "gemini-3.5-flash";
-        private double _temperature     = 0.7;
-        private int    _maxTokens       = 2048;
-        private bool   _useStreaming    = true;
-        private string _systemPrompt    = string.Empty;
-        private bool   _minimizeToTray  = true;
-        private bool   _startMinimized;
-        private bool   _enableLogging   = true;
-        private bool   _logConversations;
-
-        public string SelectedModel
-        {
-            get => _selectedModel;
-            set => SetProperty(ref _selectedModel, value);
-        }
-
-        public double Temperature
-        {
-            get => _temperature;
-            set => SetProperty(ref _temperature, value);
-        }
-
-        public int MaxTokens
-        {
-            get => _maxTokens;
-            set => SetProperty(ref _maxTokens, value);
-        }
-
-        public bool UseStreaming
-        {
-            get => _useStreaming;
-            set => SetProperty(ref _useStreaming, value);
-        }
-
-        public string SystemPrompt
-        {
-            get => _systemPrompt;
-            set => SetProperty(ref _systemPrompt, value);
-        }
-
-        public bool MinimizeToTray
-        {
-            get => _minimizeToTray;
-            set => SetProperty(ref _minimizeToTray, value);
-        }
-
-        public bool StartMinimized
-        {
-            get => _startMinimized;
-            set => SetProperty(ref _startMinimized, value);
-        }
-
-        public bool EnableLogging
-        {
-            get => _enableLogging;
-            set => SetProperty(ref _enableLogging, value);
-        }
-
-        public bool LogConversations
-        {
-            get => _logConversations;
-            set => SetProperty(ref _logConversations, value);
-        }
-
-        // ── Static lists ───────────────────────────────────────────────────────
-
-        public List<string> AvailableModels { get; } = new()
-        {
-            "gemini-3.5-flash",
-            "gemini-3.6-flash",
-            "gemini-pro-latest",
-            "gemini-3.5-pro",
-        };
-
-        // ── Commands ───────────────────────────────────────────────────────────
-
-        public AsyncRelayCommand SaveApiKeyCommand     { get; }
-        public RelayCommand      DeleteApiKeyCommand   { get; }
-        public AsyncRelayCommand ValidateApiKeyCommand { get; }
-        public RelayCommand      SaveSettingsCommand   { get; }
-        public RelayCommand      ResetSettingsCommand  { get; }
-
-        // ── Constructor ────────────────────────────────────────────────────────
-
-        public SettingsViewModel(
-            ICredentialService creds,
-            ISettingsService   settingsSvc,
-            IGeminiService     gemini,
-            ILogger<SettingsViewModel> logger)
-        {
-            _creds       = creds;
-            _settingsSvc = settingsSvc;
-            _gemini      = gemini;
-            _logger      = logger;
-
-            SaveApiKeyCommand = new AsyncRelayCommand(
-                _ => SaveApiKeyAsync(),
-                _ => !string.IsNullOrWhiteSpace(ApiKeyInput));
-
-            DeleteApiKeyCommand = new RelayCommand(
-                _ => DeleteApiKey(),
-                _ => HasApiKey);
-
-            ValidateApiKeyCommand = new AsyncRelayCommand(
-                _ => ValidateApiKeyAsync(),
-                _ => !string.IsNullOrWhiteSpace(ApiKeyInput) && !IsValidating);
-
-            SaveSettingsCommand = new RelayCommand(_ => SaveSettings());
-
-            ResetSettingsCommand = new RelayCommand(_ => LoadSettings(new AppSettings()));
-
-            LoadState();
-        }
-
-        // ── Initialisation ─────────────────────────────────────────────────────
-
-        private void LoadState()
-        {
-            HasApiKey = _creds.HasApiKey();
-            ApiKeyStatus = HasApiKey
-                ? "✅  API key is stored in Windows Credential Manager"
-                : "No API key stored yet";
-            LoadSettings(_settingsSvc.Load());
-        }
-
-        private void LoadSettings(AppSettings s)
-        {
-            SelectedModel  = s.SelectedModel;
-            Temperature    = s.Temperature;
-            MaxTokens      = s.MaxOutputTokens;
-            UseStreaming   = s.UseStreaming;
-            SystemPrompt   = s.SystemPrompt;
-            MinimizeToTray = s.MinimizeToTrayOnClose;
-            StartMinimized = s.StartMinimized;
-            EnableLogging  = s.EnableLogging;
-            LogConversations = s.LogConversations;
-        }
-
-        // ── API key operations ─────────────────────────────────────────────────
-
-        private async Task SaveApiKeyAsync()
-        {
-            var key = ApiKeyInput.Trim();
-            bool ok = _creds.SaveApiKey(key);
-            if (ok)
-            {
-                HasApiKey            = true;
-                IsApiKeyStatusError  = false;
-                ApiKeyStatus         = "✅  API key saved to Windows Credential Manager";
-                ApiKeyInput          = string.Empty;
-                _logger.LogInformation("API key saved");
-            }
-            else
-            {
-                IsApiKeyStatusError = true;
-                ApiKeyStatus        = "❌  Failed to save API key. Check app permissions.";
-            }
-            await Task.CompletedTask;
-        }
-
-        private void DeleteApiKey()
-        {
-            _creds.DeleteApiKey();
-            HasApiKey           = false;
-            IsApiKeyStatusError = false;
-            ApiKeyStatus        = "API key removed";
-            _logger.LogInformation("API key deleted");
-        }
-
-        private async Task ValidateApiKeyAsync()
-        {
-            var key = ApiKeyInput.Trim();
-            
-            if (string.IsNullOrWhiteSpace(key))
-            {
-                IsApiKeyStatusError = true;
-                ApiKeyStatus = "❌  Please enter an API key";
-                return;
-            }
-
-            if (!key.StartsWith("AIza", StringComparison.Ordinal))
-            {
-                IsApiKeyStatusError = true;
-                ApiKeyStatus = "❌  Invalid format. Gemini API keys start with 'AIza'";
-                return;
-            }
-
-            // Check cache first - prevent rate limiting from repeated tests
-            if (key == _lastValidatedKey && 
-                (DateTime.UtcNow - _lastValidationTime).TotalMilliseconds < ValidationCacheDurationMs)
-            {
-                ApiKeyStatus = _lastValidationResult 
-                    ? "✅  API key is valid! (cached - retest in 5 min)"
-                    : "❌  API key validation failed. (cached result)";
-                IsApiKeyStatusError = !_lastValidationResult;
-                _logger.LogInformation("API key validation result from cache");
-                return;
-            }
-
-            IsValidating = true;
-            ApiKeyStatus = "🔄  Validating API key…";
-            IsApiKeyStatusError = false;
-
-            // Add delay to prevent rapid-fire validation requests
-            await Task.Delay(500).ConfigureAwait(false);
-
-            try
-            {
-                bool valid = await _gemini.ValidateApiKeyAsync(key);
-
-                // Cache the result
-                _lastValidatedKey = key;
-                _lastValidationResult = valid;
-                _lastValidationTime = DateTime.UtcNow;
-
-                IsValidating        = false;
-                IsApiKeyStatusError = !valid;
-                ApiKeyStatus        = valid
-                    ? "✅  API key is valid! You can now save it."
-                    : "❌  API key validation failed. Check format or permissions.";
-                
-                if (valid)
-                {
-                    _logger.LogInformation("API key validated successfully");
-                }
-            }
-            catch (Exception ex)
-            {
-                IsValidating = false;
-                IsApiKeyStatusError = true;
-                
-                // Check if it's a rate limit error
-                if (ex.Message.Contains("429") || ex.Message.Contains("rate limit") || ex.Message.Contains("Rate limited"))
-                {
-                    ApiKeyStatus = "⏱️  Rate limit hit! Free tier: 15 requests/minute. Wait 1 minute and try again.";
-                }
-                else
-                {
-                    ApiKeyStatus = $"❌  Validation error: {ex.Message}";
-                }
-                
-                _logger.LogError(ex, "API key validation failed");
-            }
-        }
-
-        // ── Settings persistence ───────────────────────────────────────────────
-
-        private void SaveSettings()
-        {
-            var s = new AppSettings
-            {
-                SelectedModel    = SelectedModel,
-                Temperature      = Temperature,
-                MaxOutputTokens  = MaxTokens,
-                UseStreaming     = UseStreaming,
-                SystemPrompt     = SystemPrompt,
-                MinimizeToTrayOnClose = MinimizeToTray,
-                StartMinimized   = StartMinimized,
-                EnableLogging    = EnableLogging,
-                LogConversations = LogConversations,
-            };
-            _settingsSvc.Save(s);
-            _logger.LogInformation("Settings saved");
-        }
-
-        /// <summary>Raised by MainViewModel after settings are saved so chat picks up changes.</summary>
-        public event EventHandler? SettingsSaved;
-        public void NotifySettingsSaved() => SettingsSaved?.Invoke(this, EventArgs.Empty);
     }
+    public bool IsRouterProvider => Provider == "9Router";
+    public bool IsGeminiProvider => !IsRouterProvider;
+    public string RouterBaseUrl { get => _routerUrl; set => SetProperty(ref _routerUrl, value); }
+    public string RouterTranscriptionModel { get => _speechModel; set => SetProperty(ref _speechModel, value); }
+    public int RequestTimeoutSeconds { get => _timeout; set => SetProperty(ref _timeout, value); }
+    private AppSettings ConnectionSettings() => new() { Provider = Provider, RouterBaseUrl = RouterBaseUrl, RouterTranscriptionModel = RouterTranscriptionModel, RequestTimeoutSeconds = RequestTimeoutSeconds, SelectedModel = SelectedModel };
+    private bool _stream = true, _tray = true, _startMinimized, _logging = true, _logConversations;
+    public ObservableCollection<string> AvailableModels { get; } = new() { "auto" };
+    public string ApiKeyInput { get => _apiKeyInput; set { SetProperty(ref _apiKeyInput, value); RefreshCommands(); } }
+    public string ApiKeyStatus { get => _status; private set => SetProperty(ref _status, value); }
+    public string SettingsStatus { get => _settingsStatus; private set => SetProperty(ref _settingsStatus, value); }
+    public bool HasApiKey { get => _hasKey; private set { SetProperty(ref _hasKey, value); RefreshCommands(); } }
+    public bool IsValidating { get => _busy; private set { SetProperty(ref _busy, value); OnPropertyChanged(nameof(CanEditConnection)); RefreshCommands(); } }
+    public bool HasInputErrors { get => _inputErrors; set { SetProperty(ref _inputErrors, value); RefreshCommands(); if (value) SettingsStatus = "Enter whole numbers for tokens and request timeout."; } }
+    public bool CanEditConnection => !IsValidating;
+    public bool IsApiKeyStatusError { get => _error; private set => SetProperty(ref _error, value); }
+    public string SelectedModel { get => _model; set { SetProperty(ref _model, value); ApiKeyStatus = HasApiKey ? "Key saved. Test this model to verify generation and quota." : "Save a key, then test the connection."; } }
+    public double Temperature { get => _temperature; set => SetProperty(ref _temperature, value); }
+    public int MaxTokens { get => _tokens; set => SetProperty(ref _tokens, value); }
+    public bool UseStreaming { get => _stream; set => SetProperty(ref _stream, value); }
+    public string SystemPrompt { get => _prompt; set => SetProperty(ref _prompt, value); }
+    public bool MinimizeToTray { get => _tray; set => SetProperty(ref _tray, value); }
+    public bool StartMinimized { get => _startMinimized; set => SetProperty(ref _startMinimized, value); }
+    public bool EnableLogging { get => _logging; set => SetProperty(ref _logging, value); }
+    public bool LogConversations { get => _logConversations; set => SetProperty(ref _logConversations, value); }
+    public AsyncRelayCommand SaveApiKeyCommand { get; }
+    public RelayCommand DeleteApiKeyCommand { get; }
+    public AsyncRelayCommand ValidateApiKeyCommand { get; }
+    public AsyncRelayCommand RefreshModelsCommand { get; }
+    public RelayCommand UseRecommendedModelCommand { get; }
+    public RelayCommand SaveSettingsCommand { get; }
+    public RelayCommand ResetSettingsCommand { get; }
+    public RelayCommand ResetPersonaCommand { get; }
+    public event EventHandler? SettingsSaved;
+
+    public SettingsViewModel(ICredentialService creds, ISettingsService settingsSvc, IGeminiService gemini, ILogger<SettingsViewModel> logger)
+    {
+        _creds = creds; _settings = settingsSvc; _gemini = gemini; _logger = logger;
+        SaveApiKeyCommand = new AsyncRelayCommand(SaveKeyAsync, () => !IsValidating && !string.IsNullOrWhiteSpace(ApiKeyInput));
+        DeleteApiKeyCommand = new RelayCommand(DeleteKey, () => HasApiKey && !IsValidating);
+        ValidateApiKeyCommand = new AsyncRelayCommand(TestAsync, () => !IsValidating && (HasApiKey || !string.IsNullOrWhiteSpace(ApiKeyInput)));
+        RefreshModelsCommand = new AsyncRelayCommand(RefreshModelsAsync, () => !IsValidating && (HasApiKey || !string.IsNullOrWhiteSpace(ApiKeyInput)));
+        UseRecommendedModelCommand = new RelayCommand(() => { SelectedModel = "auto"; SaveSettings(); }, () => !IsValidating && IsGeminiProvider);
+        SaveSettingsCommand = new RelayCommand(SaveSettings, () => !IsValidating && !HasInputErrors);
+        ResetSettingsCommand = new RelayCommand(() => { LoadSettings(new()); SettingsStatus = "Defaults restored. Save to apply."; }, () => !IsValidating);
+        ResetPersonaCommand = new RelayCommand(() => { SystemPrompt = AppSettings.DefaultSystemPrompt; SettingsStatus = "Default persona restored. Save settings to apply."; }, () => !IsValidating);
+        HasApiKey = _creds.HasApiKey(Provider);
+        LoadSettings(_settings.Load());
+        ApiKeyStatus = HasApiKey ? "Key stored securely. Test the connection to verify quota." : "No API key saved.";
+    }
+    private void RefreshCommands()
+    {
+        SaveApiKeyCommand?.RaiseCanExecuteChanged(); DeleteApiKeyCommand?.RaiseCanExecuteChanged();
+        ValidateApiKeyCommand?.RaiseCanExecuteChanged(); RefreshModelsCommand?.RaiseCanExecuteChanged();
+        SaveSettingsCommand?.RaiseCanExecuteChanged(); ResetSettingsCommand?.RaiseCanExecuteChanged(); UseRecommendedModelCommand?.RaiseCanExecuteChanged(); ResetPersonaCommand?.RaiseCanExecuteChanged();
+    }
+    private string Key() => string.IsNullOrWhiteSpace(ApiKeyInput) ? _creds.GetApiKey(Provider) ?? "" : ApiKeyInput.Trim();
+    private async Task SaveKeyAsync()
+    {
+        if (!_creds.SaveApiKey(ApiKeyInput.Trim(), Provider)) { IsApiKeyStatusError = true; ApiKeyStatus = "Could not save the key in Windows Credential Manager."; return; }
+        HasApiKey = true; ApiKeyInput = ""; IsApiKeyStatusError = false;
+        ApiKeyStatus = "Key saved. Loading models...";
+        await RefreshModelsAsync();
+    }
+    private void DeleteKey()
+    {
+        if (!_creds.DeleteApiKey(Provider)) { IsApiKeyStatusError = true; ApiKeyStatus = "Could not remove the saved key."; return; }
+        HasApiKey = false; ApiKeyInput = ""; IsApiKeyStatusError = false; ApiKeyStatus = "API key removed.";
+    }
+    private async Task LoadModelsAsync(string key, CancellationToken ct)
+    {
+        var models = await _gemini.GetAvailableModelsAsync(key, ct, ConnectionSettings());
+        var selected = SelectedModel;
+        AvailableModels.Clear(); if (IsGeminiProvider) AvailableModels.Add("auto");
+        foreach (var model in models.OrderBy(m => m)) AvailableModels.Add(model);
+        // Keep a saved, unavailable selection visible so the user can replace it deliberately.
+        if (!string.IsNullOrWhiteSpace(selected) && !AvailableModels.Contains(selected)) AvailableModels.Add(selected);
+        SelectedModel = selected;
+    }
+    private async Task RefreshModelsAsync()
+    {
+        IsValidating = true; IsApiKeyStatusError = false; ApiKeyStatus = "Loading models for this key...";
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            await LoadModelsAsync(Key(), timeout.Token);
+            ApiKeyStatus = "Models loaded. Model listing does not verify quota; test the connection next.";
+        }
+        catch (Exception ex) { ReportError(ex); }
+        finally { IsValidating = false; }
+    }
+    private async Task TestAsync()
+    {
+        IsValidating = true; IsApiKeyStatusError = false; ApiKeyStatus = "Testing generation with the selected model...";
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(45));
+            var key = Key();
+            await LoadModelsAsync(key, timeout.Token);
+            var model = await _gemini.TestConnectionAsync(key, ConnectionSettings(), timeout.Token);
+            ApiKeyStatus = $"Connected — {model} generated a response. Save settings to apply your model choice.";
+        }
+        catch (Exception ex) { ReportError(ex); }
+        finally { IsValidating = false; }
+    }
+    private void ReportError(Exception ex)
+    {
+        IsApiKeyStatusError = true;
+        ApiKeyStatus = ex is OperationCanceledException ? "Connection test timed out. Check your connection and try again." : ex.Message;
+        _logger.LogWarning("Connection check failed: {Message}", ApiKeyStatus);
+    }
+    private void LoadSettings(AppSettings settings)
+    {
+        _provider = settings.Provider == "9Router" ? "9Router" : "Gemini";
+        OnPropertyChanged(nameof(Provider)); OnPropertyChanged(nameof(IsRouterProvider)); OnPropertyChanged(nameof(IsGeminiProvider));
+        RouterBaseUrl = settings.RouterBaseUrl; RouterTranscriptionModel = settings.RouterTranscriptionModel;
+        RequestTimeoutSeconds = settings.RequestTimeoutSeconds;
+        _geminiModel = IsGeminiProvider ? settings.SelectedModel : settings.GeminiModel;
+        _routerModel = IsRouterProvider ? settings.SelectedModel : settings.RouterModel;
+        HasApiKey = _creds.HasApiKey(Provider);
+        AvailableModels.Clear(); if (IsGeminiProvider) AvailableModels.Add("auto");
+        var model = string.IsNullOrWhiteSpace(settings.SelectedModel) ? (IsGeminiProvider ? "auto" : "") : settings.SelectedModel;
+        if (!string.IsNullOrWhiteSpace(model) && !AvailableModels.Contains(model)) AvailableModels.Add(model);
+        SelectedModel = model; Temperature = settings.Temperature; MaxTokens = settings.MaxOutputTokens;
+        HasInputErrors = false; OnPropertyChanged(nameof(MaxTokens)); OnPropertyChanged(nameof(RequestTimeoutSeconds));
+        UseStreaming = settings.UseStreaming; SystemPrompt = settings.SystemPrompt;
+        MinimizeToTray = settings.MinimizeToTrayOnClose; StartMinimized = settings.StartMinimized;
+        EnableLogging = settings.EnableLogging; LogConversations = settings.LogConversations;
+    }
+    private void SaveSettings()
+    {
+        if (HasInputErrors) { SettingsStatus = "Correct the invalid input before saving."; return; }
+        if (!double.IsFinite(Temperature) || Temperature < 0 || Temperature > 2 || MaxTokens < 128 || MaxTokens > 32768 || RequestTimeoutSeconds < 5 || RequestTimeoutSeconds > 120)
+        { SettingsStatus = "Use temperature 0–2, tokens 128–32768, and request timeout 5–120 seconds."; return; }
+        try
+        {
+            // Preserve preferences managed elsewhere, including the privacy toggle.
+            var settings = _settings.Load();
+            if (IsRouterProvider) OpenAiCompatibleService.NormalizeBaseUrl(RouterBaseUrl);
+            settings.Provider = Provider; settings.RouterBaseUrl = RouterBaseUrl; settings.RouterTranscriptionModel = RouterTranscriptionModel;
+            settings.RequestTimeoutSeconds = RequestTimeoutSeconds;
+            if (IsGeminiProvider) _geminiModel = SelectedModel; else _routerModel = SelectedModel;
+            settings.GeminiModel = _geminiModel; settings.RouterModel = _routerModel;
+            settings.SelectedModel = SelectedModel; settings.Temperature = Temperature; settings.MaxOutputTokens = MaxTokens;
+            settings.UseStreaming = UseStreaming; settings.SystemPrompt = SystemPrompt;
+            settings.MinimizeToTrayOnClose = MinimizeToTray; settings.StartMinimized = StartMinimized;
+            settings.EnableLogging = EnableLogging; settings.LogConversations = LogConversations;
+            _settings.Save(settings); NotifySettingsSaved(); SettingsStatus = "Settings saved.";
+        }
+        catch (Exception ex) { SettingsStatus = "Settings could not be saved: " + ex.Message; }
+    }
+    public void NotifySettingsSaved() => SettingsSaved?.Invoke(this, EventArgs.Empty);
 }
