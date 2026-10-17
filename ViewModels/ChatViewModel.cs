@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -24,9 +25,8 @@ namespace Assistant.ViewModels
         private AppSettings _settings;
         private CancellationTokenSource? _cts;
 
-        // ── Rate limiting (free tier: 15 requests/minute) ──────────────────────
-        private DateTime _lastApiRequestTime = DateTime.MinValue;
-        private const int MinMsPerRequest = 10000;  // 10 seconds per request (6 requests/minute) - safest for free tier
+        private string _sendStatus = "";
+        public string SendStatus { get => _sendStatus; private set => SetProperty(ref _sendStatus, value); }
 
         // ── Bindable state ─────────────────────────────────────────────────────
 
@@ -96,11 +96,13 @@ namespace Assistant.ViewModels
 
         private async Task SendAsync()
         {
-            var apiKey = _creds.GetApiKey();
+            RefreshSettings();
+            var requestSettings = _settings;
+            var apiKey = _creds.GetApiKey(requestSettings.Provider);
             if (string.IsNullOrEmpty(apiKey))
             {
                 AddSystemMessage(
-                    "⚠️  No API key found. Please go to Settings and enter your Gemini API key.");
+                    $"No {requestSettings.Provider} API key found. Save it in Settings first.");
                 return;
             }
 
@@ -114,22 +116,21 @@ namespace Assistant.ViewModels
             var assistantMsg = new ChatMessage
             {
                 Role      = MessageRole.Assistant,
+                ProviderName = requestSettings.Provider,
                 IsStreaming = true,
                 Content   = string.Empty
             };
             Messages.Add(assistantMsg);
 
-            // 3. Rate limiting: enforce min delay between requests (15 req/min = ~4100ms per request)
-            var timeSinceLastRequest = (DateTime.UtcNow - _lastApiRequestTime).TotalMilliseconds;
-            if (timeSinceLastRequest < MinMsPerRequest)
-            {
-                var delayMs = (int)(MinMsPerRequest - timeSinceLastRequest);
-                _logger.LogInformation("Rate limit prevention: waiting {Ms}ms before next request", delayMs);
-                await Task.Delay(delayMs).ConfigureAwait(false);
-            }
-
             _cts = new CancellationTokenSource();
-            var token = _cts.Token;
+            var requestCts = _cts;
+            var token = requestCts.Token;
+            var clock = Stopwatch.StartNew();
+            bool firstText = false;
+            SendStatus = $"Waiting for {requestSettings.Provider} / {requestSettings.SelectedModel}...";
+            var statusTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+            statusTimer.Tick += (_, _) => SendStatus = $"{(firstText ? "Receiving" : "Waiting for")} {requestSettings.Provider} · {clock.Elapsed.TotalSeconds:0}s";
+            statusTimer.Start();
 
             // Build history — exclude the empty assistant placeholder
             var history = new List<ChatMessage>(Messages);
@@ -139,20 +140,23 @@ namespace Assistant.ViewModels
 
             try
             {
-                // Record request time AFTER successful completion (see finally block)
-                
-                if (_settings.UseStreaming)
+                if (requestSettings.UseStreaming)
                 {
-                    await foreach (var chunk in _gemini.SendMessageStreamAsync(history, apiKey, _settings, token)
+                    await foreach (var chunk in _gemini.SendMessageStreamAsync(history, apiKey, requestSettings, token)
                                                        .ConfigureAwait(false))
                     {
+                        if (!firstText)
+                        {
+                            firstText = true;
+                            _logger.LogInformation("First response text after {Ms}ms [Provider: {Provider}, Model: {Model}]", clock.ElapsedMilliseconds, requestSettings.Provider, requestSettings.SelectedModel);
+                        }
                         // All UI updates dispatched to the UI thread
                         await dispatcher.InvokeAsync(() => assistantMsg.Content += chunk);
                     }
                 }
                 else
                 {
-                    var reply = await _gemini.SendMessageAsync(history, apiKey, _settings, token)
+                    var reply = await _gemini.SendMessageAsync(history, apiKey, requestSettings, token)
                                             .ConfigureAwait(false);
                     await dispatcher.InvokeAsync(() => assistantMsg.Content = reply);
                 }
@@ -165,6 +169,7 @@ namespace Assistant.ViewModels
                 await dispatcher.InvokeAsync(() =>
                 {
                     assistantMsg.Content = "[Response cancelled by user]";
+                    assistantMsg.IsError = true;
                     assistantMsg.IsStreaming = false;
                 });
                 _logger.LogInformation("Request was cancelled");
@@ -194,26 +199,18 @@ namespace Assistant.ViewModels
                 await dispatcher.InvokeAsync(() =>
                 {
                     assistantMsg.IsStreaming = false;
+                    statusTimer.Stop();
+                    requestCts.Dispose();
+                    if (_cts == requestCts) _cts = null;
+                    SendStatus = $"Finished in {clock.Elapsed.TotalSeconds:0.0}s";
                     IsSending = false;
                 });
-                _cts?.Dispose();
-                _cts = null;
-                
-                // Only record time if response was successful (not error)
-                if (assistantMsg.Content.Length > 0 && !assistantMsg.IsError)
-                    _lastApiRequestTime = DateTime.UtcNow;
+                _logger.LogInformation("Chat request finished after {Ms}ms [Provider: {Provider}, Model: {Model}]", clock.ElapsedMilliseconds, requestSettings.Provider, requestSettings.SelectedModel);
             }
         }
 
-        private static string FormatApiError(GeminiApiException ex) => ex.HttpStatusCode switch
-        {
-            400 => $"❌  Bad request: {ex.Message}",
-            401 => "❌  Invalid API key. Please update it in Settings.",
-            403 => "❌  Access denied. Check your API key permissions.",
-            429 => "❌  Rate limit exceeded. Please wait a moment and try again.",
-            500 => $"❌  Gemini server error: {ex.Message}",
-            _   => $"❌  API error ({ex.HttpStatusCode}): {ex.Message}"
-        };
+        private static string FormatApiError(GeminiApiException ex)
+            => $"API error ({ex.HttpStatusCode}): {ex.Message}";
 
         private void AddSystemMessage(string text) =>
             Messages.Add(new ChatMessage { Role = MessageRole.System, Content = text });
