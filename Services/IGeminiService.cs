@@ -38,6 +38,11 @@ namespace Assistant.Services
         /// Makes a minimal test call to check whether the key is accepted by the API.
         /// Does NOT throw — returns false on any failure.
         /// </summary>
+        Task<string> SendAudioMessageAsync(byte[] wav, string apiKey, AppSettings settings, CancellationToken ct = default);
+
+        Task<IReadOnlyList<string>> GetAvailableModelsAsync(string apiKey, CancellationToken ct = default, AppSettings? settings = null);
+        Task<string> TestConnectionAsync(string apiKey, AppSettings settings, CancellationToken ct = default);
+
         Task<bool> ValidateApiKeyAsync(string apiKey, CancellationToken ct = default);
     }
 }

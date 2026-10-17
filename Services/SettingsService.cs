@@ -32,7 +32,9 @@ namespace Assistant.Services
             {
                 if (!File.Exists(_path)) return new AppSettings();
                 var json = File.ReadAllText(_path);
-                return JsonSerializer.Deserialize<AppSettings>(json, _json) ?? new AppSettings();
+                var settings = JsonSerializer.Deserialize<AppSettings>(json, _json) ?? new AppSettings();
+                if (settings.SystemPrompt == AppSettings.LegacySystemPrompt) settings.SystemPrompt = AppSettings.DefaultSystemPrompt;
+                return settings;
             }
             catch (Exception ex)
             {
@@ -52,6 +54,7 @@ namespace Assistant.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to save settings");
+                throw;
             }
         }
     }

@@ -19,6 +19,7 @@ namespace Assistant.Services
     public sealed class CredentialManagerService : ICredentialService
     {
         private const string CredentialTarget = "HiddenGem_ApiKey";
+        private static string Target(string provider) => provider == "9Router" ? "HiddenGem_9Router_ApiKey" : CredentialTarget;
         private const uint   CRED_TYPE_GENERIC        = 1;
         private const uint   CRED_PERSIST_ENTERPRISE = 3;
         private const int    ERROR_NOT_FOUND           = 1168;
@@ -61,7 +62,7 @@ namespace Assistant.Services
 
         // ── Public API ────────────────────────────────────────────────────────
 
-        public bool SaveApiKey(string apiKey)
+        public bool SaveApiKey(string apiKey, string provider = "Gemini")
         {
             if (string.IsNullOrWhiteSpace(apiKey)) return false;
 
@@ -74,7 +75,7 @@ namespace Assistant.Services
                     var cred = new CREDENTIAL
                     {
                         Type               = CRED_TYPE_GENERIC,
-                        TargetName         = CredentialTarget,
+                        TargetName         = Target(provider),
                         Comment            = "Hidden Gem — API Key",
                         CredentialBlobSize = (uint)blob.Length,
                         CredentialBlob     = blobHandle.AddrOfPinnedObject(),
@@ -98,11 +99,11 @@ namespace Assistant.Services
             }
         }
 
-        public string? GetApiKey()
+        public string? GetApiKey(string provider = "Gemini")
         {
             try
             {
-                if (!CredRead(CredentialTarget, CRED_TYPE_GENERIC, 0, out var ptr))
+                if (!CredRead(Target(provider), CRED_TYPE_GENERIC, 0, out var ptr))
                 {
                     int err = Marshal.GetLastWin32Error();
                     if (err != ERROR_NOT_FOUND)
@@ -128,11 +129,11 @@ namespace Assistant.Services
             }
         }
 
-        public bool DeleteApiKey()
+        public bool DeleteApiKey(string provider = "Gemini")
         {
             try
             {
-                bool ok = CredDelete(CredentialTarget, CRED_TYPE_GENERIC, 0);
+                bool ok = CredDelete(Target(provider), CRED_TYPE_GENERIC, 0);
                 if (ok) _logger.LogInformation("API key removed from Windows Credential Manager");
                 return ok;
             }
@@ -143,6 +144,6 @@ namespace Assistant.Services
             }
         }
 
-        public bool HasApiKey() => GetApiKey() is not null;
+        public bool HasApiKey(string provider = "Gemini") => GetApiKey(provider) is not null;
     }
 }
