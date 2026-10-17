@@ -26,11 +26,10 @@ namespace Assistant.Services
     {
         private readonly ILogger<SpeechService> _logger;
         private readonly IGeminiService? _gemini;  // Optional for transcription
+        private readonly ISettingsService? _settings;
         private readonly ICredentialService? _creds;  // Optional for API key
         private SpeechRecognitionEngine? _recognizer;  // Fallback
         private IWaveIn? _waveIn;  // NAudio microphone
-        private WaveFileWriter? _waveWriter;
-        private byte[] _audioBuffer = Array.Empty<byte>();
         private TaskCompletionSource<string>? _recordingTcs;
 
         public event EventHandler<bool>? IsRecordingChanged;
@@ -38,11 +37,12 @@ namespace Assistant.Services
         public SpeechService(
             ILogger<SpeechService> logger,
             IGeminiService? gemini = null,
-            ICredentialService? creds = null)
+            ICredentialService? creds = null, ISettingsService? settings = null)
         {
             _logger = logger;
             _gemini = gemini;
             _creds = creds;
+            _settings = settings;
             InitializeMicrophone();
         }
 
@@ -51,7 +51,7 @@ namespace Assistant.Services
             try
             {
                 var recognizers = SpeechRecognitionEngine.InstalledRecognizers();
-                return recognizers.Count > 0;
+                return WaveIn.DeviceCount > 0 || recognizers.Count > 0;
             }
             catch (Exception ex)
             {
@@ -74,6 +74,7 @@ namespace Assistant.Services
                 _logger.LogInformation("Starting speech recognition (NAudio microphone)");
                 IsRecordingChanged?.Invoke(this, true);
 
+                var connection = _settings?.Load() ?? new AppSettings();
                 // Try NAudio microphone first
                 if (_waveIn != null)
                 {
@@ -82,10 +83,10 @@ namespace Assistant.Services
                     if (audioData.Length > 0 && _gemini != null && _creds != null)
                     {
                         // Transcribe using Gemini
-                        var apiKey = _creds.GetApiKey();
+                        var apiKey = _creds.GetApiKey(connection.Provider);
                         if (!string.IsNullOrEmpty(apiKey))
                         {
-                            var text = await TranscribeAudioAsync(audioData, apiKey, ct).ConfigureAwait(false);
+                            var text = await TranscribeAudioAsync(audioData, apiKey, connection, ct).ConfigureAwait(false);
                             if (!string.IsNullOrEmpty(text))
                             {
                                 _logger.LogInformation("Speech transcribed: {Length} chars", text.Length);
@@ -99,129 +100,66 @@ namespace Assistant.Services
                 _logger.LogWarning("Falling back to Windows Speech Recognition");
                 return await RecognizeSpeechWindowsAsync(ct).ConfigureAwait(false);
             }
-            catch (Exception ex)
+            finally
             {
-                _logger.LogError(ex, "Speech recognition error");
                 IsRecordingChanged?.Invoke(this, false);
-                return string.Empty;
             }
         }
 
         private async Task<byte[]> RecordFromMicrophoneAsync(CancellationToken ct)
         {
-            var recordingBuffer = new System.IO.MemoryStream();
-            var waveWriter = new WaveFileWriter(recordingBuffer, _waveIn!.WaveFormat);
-
-            _waveIn.DataAvailable += (s, e) =>
+            using var capture = new WaveInEvent { WaveFormat = new WaveFormat(16000, 16, 1), BufferMilliseconds = 100 };
+            using var buffer = new System.IO.MemoryStream();
+            var finished = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var stopped = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var heardSpeech = false;
+            var silenceMs = 0;
+            capture.DataAvailable += (_, e) =>
             {
-                waveWriter.Write(e.Buffer, 0, e.BytesRecorded);
+                buffer.Write(e.Buffer, 0, e.BytesRecorded);
+                double energy = 0;
+                for (int i = 0; i + 1 < e.BytesRecorded; i += 2)
+                {
+                    var sample = BitConverter.ToInt16(e.Buffer, i) / 32768.0;
+                    energy += sample * sample;
+                }
+                var rms = Math.Sqrt(energy / Math.Max(1, e.BytesRecorded / 2));
+                if (rms > 0.012) { heardSpeech = true; silenceMs = 0; }
+                else if (heardSpeech) silenceMs += e.BytesRecorded * 1000 / capture.WaveFormat.AverageBytesPerSecond;
+                if (silenceMs >= 1200) finished.TrySetResult(true);
             };
-
-            _waveIn.StartRecording();
-            _logger.LogInformation("Recording from microphone... speak now (max 30 seconds)");
-
+            capture.RecordingStopped += (_, e) =>
+            {
+                if (e.Exception != null) { stopped.TrySetException(e.Exception); finished.TrySetException(e.Exception); }
+                else stopped.TrySetResult(true);
+            };
+            capture.StartRecording();
             try
             {
-                // Record for max 30 seconds or until user stops (no easy way to detect end, so timeout)
-                await Task.Delay(TimeSpan.FromSeconds(30), ct).ConfigureAwait(false);
+                await Task.WhenAny(finished.Task, Task.Delay(TimeSpan.FromSeconds(30), ct)).ConfigureAwait(false);
+                ct.ThrowIfCancellationRequested();
+                if (finished.Task.IsCompleted) await finished.Task.ConfigureAwait(false);
             }
-            catch (OperationCanceledException)
+            finally
             {
-                _logger.LogInformation("Recording cancelled");
+                capture.StopRecording();
+                await stopped.Task.ConfigureAwait(false);
             }
-
-            _waveIn.StopRecording();
-            waveWriter.Flush();
-            
-            var audioBytes = recordingBuffer.ToArray();
-            waveWriter.Dispose();
-            recordingBuffer.Dispose();
-
-            _logger.LogInformation("Recording complete: {Bytes} bytes", audioBytes.Length);
-            return audioBytes;
+            if (!heardSpeech) return Array.Empty<byte>();
+            using var wav = new System.IO.MemoryStream();
+            using (var writer = new WaveFileWriter(new NAudio.Utils.IgnoreDisposeStream(wav), capture.WaveFormat))
+            {
+                var pcm = buffer.ToArray();
+                writer.Write(pcm, 0, pcm.Length);
+            }
+            return wav.ToArray();
         }
 
-        private async Task<string> TranscribeAudioAsync(byte[] audioData, string apiKey, CancellationToken ct)
+        private async Task<string> TranscribeAudioAsync(byte[] audioData, string apiKey, AppSettings connection, CancellationToken ct)
         {
-            try
-            {
-                // Extract WAV data (skip header, get just PCM)
-                var pcmData = ExtractPcmFromWav(audioData);
-                if (pcmData.Length == 0)
-                {
-                    _logger.LogWarning("No PCM data extracted from WAV");
-                    return string.Empty;
-                }
-
-                // Convert to float samples
-                var floatSamples = ConvertBytesToFloat(pcmData);
-                var base64Audio = Convert.ToBase64String(pcmData);
-
-                _logger.LogInformation("Sending audio to Gemini for transcription: {Bytes} bytes", pcmData.Length);
-
-                // Use Gemini to transcribe
-                var history = new System.Collections.Generic.List<ChatMessage>();
-                var result = await _gemini!.SendMessageAsync(
-                    history,
-                    apiKey,
-                    new Models.AppSettings
-                    {
-                        SelectedModel = "gemini-3.5-flash",
-                        Temperature = 0.1f,
-                        MaxOutputTokens = 500,
-                        SystemPrompt = "Transcribe this audio. Return ONLY the transcription, nothing else. If audio is inaudible, return [INAUDIBLE]."
-                    },
-                    ct
-                ).ConfigureAwait(false);
-
-                return result.Trim();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Audio transcription failed");
-                return string.Empty;
-            }
-        }
-
-        private byte[] ExtractPcmFromWav(byte[] wavData)
-        {
-            try
-            {
-                if (wavData.Length < 44) return Array.Empty<byte>();
-
-                // Find "data" chunk
-                int dataPos = Array.IndexOf(wavData, (byte)'d');
-                while (dataPos > 0 && dataPos < wavData.Length - 4)
-                {
-                    if (wavData[dataPos] == 'd' && wavData[dataPos+1] == 'a' && 
-                        wavData[dataPos+2] == 't' && wavData[dataPos+3] == 'a')
-                    {
-                        // Read data chunk size
-                        int size = BitConverter.ToInt32(wavData, dataPos + 4);
-                        int pcmStart = dataPos + 8;
-                        return wavData.Skip(pcmStart).Take(size).ToArray();
-                    }
-                    dataPos++;
-                }
-
-                return Array.Empty<byte>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to extract PCM from WAV");
-                return Array.Empty<byte>();
-            }
-        }
-
-        private float[] ConvertBytesToFloat(byte[] data)
-        {
-            var floats = new float[data.Length / 2];
-            for (int i = 0; i < floats.Length; i++)
-            {
-                short sample = BitConverter.ToInt16(data, i * 2);
-                floats[i] = sample / 32768f;
-            }
-            return floats;
+            var result = await _gemini!.SendAudioMessageAsync(audioData, apiKey,
+                new AppSettings { Provider = connection.Provider, RouterBaseUrl = connection.RouterBaseUrl, RouterTranscriptionModel = connection.RouterTranscriptionModel, RequestTimeoutSeconds = connection.RequestTimeoutSeconds, SelectedModel = connection.SelectedModel, Temperature = 0, MaxOutputTokens = 2048 }, ct).ConfigureAwait(false);
+            return result.Trim() == "[INAUDIBLE]" ? string.Empty : result.Trim();
         }
 
         private async Task<string> RecognizeSpeechWindowsAsync(CancellationToken ct)
@@ -372,7 +310,6 @@ namespace Assistant.Services
         public void Dispose()
         {
             _waveIn?.Dispose();
-            _waveWriter?.Dispose();
 
             if (_recognizer != null)
             {
