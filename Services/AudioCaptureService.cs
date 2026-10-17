@@ -137,7 +137,7 @@ namespace Assistant.Services
         /// <summary>
         /// Stops capturing audio and returns accumulated samples.
         /// </summary>
-        public async Task<float[]> StopCapturingAsync(CancellationToken ct = default)
+        public Task<float[]> StopCapturingAsync(CancellationToken ct = default)
         {
             try
             {
@@ -160,13 +160,13 @@ namespace Assistant.Services
 
                 var result = TakeCurrentBuffer();
 
-                return result;
+                return Task.FromResult(result);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error stopping audio capture");
                 IsRecordingChanged?.Invoke(this, false);
-                return Array.Empty<float>();
+                return Task.FromResult(Array.Empty<float>());
             }
         }
 
