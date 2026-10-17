@@ -6,16 +6,7 @@ using Hardcodet.Wpf.TaskbarNotification;
 
 namespace Assistant.Helpers
 {
-    /// <summary>
-    /// Manages the system-tray icon and its context-menu actions.
-    ///
-    /// We create the TaskbarIcon in code so the icon bitmap can be generated
-    /// programmatically — eliminating a hard dependency on a bundled .ico file.
-    /// If you add Assets/tray.ico to the project (Build Action = Resource) you
-    /// can replace CreateFallbackIcon() with:
-    ///     Icon = new System.Windows.Media.Imaging.BitmapImage(
-    ///                new Uri("pack://application:,,,/Assets/tray.ico"))
-    /// </summary>
+    /// <summary>Manages the shared gem tray icon and its show/exit actions.</summary>
     public sealed class SystemTrayManager : IDisposable
     {
         private readonly TaskbarIcon _tray;
@@ -27,8 +18,8 @@ namespace Assistant.Helpers
             _owner = owner;
             _tray  = new TaskbarIcon
             {
-                ToolTipText = "Gemini Assistant",
-                Icon        = CreateFallbackIcon(),
+                ToolTipText = "Hidden Gem",
+                Icon        = LoadAppIcon(),
             };
 
             // Build context menu
@@ -65,24 +56,18 @@ namespace Assistant.Helpers
             else ShowWindow();
         }
 
-        /// <summary>
-        /// Generates a simple 32×32 "G" icon in memory so the app runs
-        /// without requiring a bundled .ico file.
-        /// </summary>
-        private static Icon CreateFallbackIcon()
+        private static Icon LoadAppIcon()
         {
-            using var bmp = new Bitmap(32, 32);
-            using var g   = Graphics.FromImage(bmp);
-            g.Clear(Color.FromArgb(75, 158, 247));        // accent blue
-            using var font  = new Font("Segoe UI", 18, System.Drawing.FontStyle.Bold);
-            using var brush = new SolidBrush(Color.White);
-            g.DrawString("G", font, brush, new PointF(5, 3));
-            return Icon.FromHandle(bmp.GetHicon());
+            var resource = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/Assets/app.ico"));
+            using var stream = resource.Stream;
+            using var icon = new Icon(stream, 32, 32);
+            return (Icon)icon.Clone();
         }
 
         public void Dispose()
         {
             if (_disposed) return;
+            _tray.Icon?.Dispose();
             _tray.Dispose();
             _disposed = true;
         }
