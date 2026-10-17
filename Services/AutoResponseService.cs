@@ -143,11 +143,11 @@ namespace Assistant.Services
                 _logger.LogInformation("Generating auto-response for question: {Chars} chars", 
                     question.Length);
 
-                // Capture screenshot if not provided
+                // Capture center screenshot if not provided
                 if (string.IsNullOrEmpty(screenshotBase64))
                 {
-                    _logger.LogDebug("Capturing screenshot for context");
-                    var bitmap = await _screenCapture.CaptureFullScreenAsync().ConfigureAwait(false);
+                    _logger.LogDebug("Capturing center screen for context");
+                    var bitmap = await _screenCapture.CaptureCenterScreenAsync(0.70, 0.70).ConfigureAwait(false);
                     screenshotBase64 = _screenCapture.BitmapToBase64(bitmap);
                     bitmap.Dispose();
                 }
@@ -159,8 +159,9 @@ namespace Assistant.Services
                 var history = new List<ChatMessage>();
                 var geminiSettings = new AppSettings
                 {
-                    SelectedModel = settings.SelectedModel,
-                    Temperature = 0.5,  // Balanced creativity/accuracy
+                    Provider = settings.Provider, RouterBaseUrl = settings.RouterBaseUrl, RequestTimeoutSeconds = settings.RequestTimeoutSeconds,
+                    SelectedModel = string.IsNullOrWhiteSpace(settings.SelectedModel) ? "gemini-2.0-flash" : settings.SelectedModel,
+                    Temperature = 0.3,  // Low temperature for crisp, accurate answers
                     MaxOutputTokens = 2048,
                     SystemPrompt = GetAutoResponseSystemPrompt()
                 };
@@ -212,22 +213,23 @@ namespace Assistant.Services
 
         private string BuildPrompt(string question, string? context)
         {
-            var prompt = "TASK: Interview assistance with visual context.\n\n";
-            prompt += "QUESTION:\n" + question + "\n\n";
+            var prompt = "TARGET: Solve live technical interview question / test displayed on screen.\n\n";
+            prompt += "INTERVIEWER QUESTION / CONTEXT:\n" + question + "\n\n";
             
             if (!string.IsNullOrEmpty(context))
             {
-                prompt += "ADDITIONAL CONTEXT:\n" + context + "\n\n";
+                prompt += "ADDITIONAL NOTES:\n" + context + "\n\n";
             }
 
             prompt += "INSTRUCTIONS:\n" +
-                     "1. Analyze the screenshot carefully (shows the current screen state)\n" +
-                     "2. If the screenshot shows an error, problem, or code - provide SOLUTION\n" +
-                     "3. If the question asks about what's on screen - describe and solve it\n" +
-                     "4. If it's a general interview question - answer based on screen context\n" +
-                     "5. Provide professional, actionable answers\n" +
-                     "6. Keep responses concise (2-3 sentences)\n" +
-                     "7. Do NOT describe the screenshot - analyze and solve the problem\n\n" +
+                     "1. Focus directly on the problem / code snippet / multiple-choice question shown in the center of the screen.\n" +
+                     "2. Provide the DIRECT ANSWER first (spoken response or correct option/code).\n" +
+                     "3. If code or algorithm is required, provide clean, optimal, production-ready code with minimal explanation.\n" +
+                     "4. If multiple choice / case study, state the EXACT correct option and 1-sentence crisp reason.\n" +
+                     "5. Format:\n" +
+                     "   🎯 **Direct Answer / TL;DR**: (What candidate should say immediately)\n" +
+                     "   💻 **Code / Detailed Solution**: (If applicable)\n" +
+                     "   💡 **Key Explanation Points**: (Brief bullet points for follow-up questions)\n\n" +
                      "RESPONSE:";
 
             return prompt;
@@ -235,20 +237,11 @@ namespace Assistant.Services
 
         private string GetAutoResponseSystemPrompt()
         {
-            return "You are an expert interview assistant and technical problem solver.\n\n" +
-                   "Your role is to:\n" +
-                   "1. ANALYZE the screenshot carefully for errors, code, or problems\n" +
-                   "2. SOLVE issues shown on screen (provide actionable solutions)\n" +
-                   "3. ANSWER interview questions with reference to screen context\n" +
-                   "4. PROVIDE working solutions if code/errors are visible\n" +
-                   "5. EXPLAIN clearly and professionally\n\n" +
-                   "Guidelines:\n" +
-                   "- If you see an error message, explain the cause and solution\n" +
-                   "- If you see code, analyze it and answer questions about it\n" +
-                   "- If you see a problem, provide step-by-step solution\n" +
-                   "- Keep responses short and actionable (2-3 sentences)\n" +
-                   "- Sound natural and conversational, not robotic\n" +
-                   "- Always reference what you see on screen";
+            return "You are a top-tier senior tech lead and live coding interview assistant.\n\n" +
+                   "Core Objectives:\n" +
+                   "1. Solve the exact problem, case study, or multiple choice question shown on screen.\n" +
+                   "2. Deliver instant, highly accurate, natural-sounding answers that a candidate can say smoothly.\n" +
+                   "3. Be extremely concise. Avoid generic fluff, disclaimers, or intro phrases like 'Sure, here is the answer'.";
         }
 
         private bool MatchesPattern(string text, string pattern, bool caseSensitive)
