@@ -16,7 +16,7 @@
                     <TextBlock Text="Interview Assistant" FontSize="28" FontWeight="Bold"
                                Foreground="#FFEAEAEA"/>
                 </StackPanel>
-                <TextBlock Text="Auto-respond to interview questions in real-time. Captures audio from Zoom, Discord, GMeet."
+                <TextBlock Text="Automatically read questions in the selected window and listen to speaker audio."
                            Foreground="#FF999999" FontSize="14" Margin="52,0,0,0"/>
             </StackPanel>
 
@@ -27,7 +27,7 @@
                  ══════════════════════════════════════════ -->
             <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                 <TextBlock Text="🎤" FontSize="22" Margin="0,0,12,0" VerticalAlignment="Center"/>
-                <TextBlock Text="AUDIO CAPTURE" FontSize="19" FontWeight="Bold" Foreground="#FF58A6FF" VerticalAlignment="Center"/>
+                <TextBlock Text="LIVE SCREEN + AUDIO" FontSize="19" FontWeight="Bold" Foreground="#FF58A6FF" VerticalAlignment="Center"/>
             </StackPanel>
 
             <Border Background="#FF1A1A1A"
@@ -37,13 +37,26 @@
                     Padding="28,24"
                     Margin="0,0,0,32">
                 <StackPanel>
-                    <TextBlock Text="Captures audio from speakers (Zoom, Discord, GMeet participants)."
+                    <TextBlock Text="Select the shared-question window and the output device used by Zoom, Discord, Meet, or another app."
                                Foreground="#FFB0B0B0" FontSize="13" Margin="0,0,0,16"/>
+
+                    <TextBlock Text="Question window" Foreground="#FFCCCCCC" Margin="0,0,0,6"/>
+                    <ComboBox ItemsSource="{Binding AvailableWindows}"
+                              SelectedItem="{Binding SelectedWindow}" DisplayMemberPath="Title"
+                              IsEnabled="{Binding CanSelectSources}" Height="34" Margin="0,0,0,14"/>
+                    <TextBlock Text="Call speaker / headphones" Foreground="#FFCCCCCC" Margin="0,0,0,6"/>
+                    <ComboBox ItemsSource="{Binding AvailableAudioDevices}"
+                              SelectedItem="{Binding SelectedAudioDevice}" DisplayMemberPath="Name"
+                              IsEnabled="{Binding CanSelectSources}" Height="34" Margin="0,0,0,14"/>
+                    <Button Style="{StaticResource SecondaryButton}" Command="{Binding RefreshSourcesCommand}"
+                            Content="Refresh windows and audio devices" HorizontalAlignment="Left" Margin="0,0,0,16"/>
+                    <TextBlock Text="Keep the chosen window visible and uncovered. You can use a shared document or code editor as the question window."
+                               Foreground="#FF999999" TextWrapping="Wrap" Margin="0,0,0,16"/>
 
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                         <Button Style="{StaticResource PrimaryButton}"
                                 Command="{Binding StartCaptureCommand}"
-                                Content="🎤  Start Listening"
+                                Content="Start Live Assistant"
                                 Height="40"
                                 Padding="22,0"
                                 FontSize="13"
@@ -108,14 +121,11 @@
                             <TextBlock TextWrapping="Wrap" FontSize="12"
                                        Foreground="#FFCCCCCC"
                                        LineHeight="20">
-1. Start capturing audio from speakers
-2. System listens for interview questions
-3. When a question is detected:
-   - Captures current screen
-   - Transcribes the question
-   - Generates intelligent response using Gemini AI
-4. Response appears below for review/copying
-5. Use answers manually or copy to chat
+1. Select the window containing the question and the call's speaker output.
+2. Start Live Assistant; screen and speaker audio are monitored together.
+3. New screen questions or spoken follow-ups generate answers automatically.
+4. The question and answer appear below, without pressing Screenshot.
+5. Unchanged questions are skipped. Turn off auto-response to pause analysis.
                             </TextBlock>
                         </StackPanel>
                     </Border>
@@ -244,10 +254,10 @@
                     <TextBlock TextWrapping="Wrap" FontSize="12"
                                Foreground="#FFCCCCCC"
                                LineHeight="20">
-• Audio capture requires system audio routing (WASAPI loopback)
+• Speaker capture hears audio played on the selected output, including other apps
 • Generated responses are AI-assisted — always review before using
 • Use responsibly in interviews; AI may not catch context nuances
-• Responses are not stored or transmitted except to Gemini API
+• Selected-window images and speaker audio are sent to Gemini for analysis
 • Practice with real questions before using in actual interviews
                     </TextBlock>
                 </StackPanel>
