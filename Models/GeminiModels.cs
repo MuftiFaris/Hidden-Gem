@@ -33,6 +33,8 @@ namespace Assistant.Models
 
     public class GeminiPart
     {
+        [JsonPropertyName("thought")]
+        public bool Thought { get; set; }
         [JsonPropertyName("text")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? Text { get; set; }

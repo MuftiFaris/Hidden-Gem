@@ -29,35 +29,38 @@ namespace Assistant.Models
 
         public Guid Id { get; init; } = Guid.NewGuid();
         public MessageRole Role { get; init; }
+        public string ProviderName { get; init; } = "Gemini";
         public DateTime Timestamp { get; init; } = DateTime.Now;
 
         public string Content
         {
             get => _content;
-            set { _content = value; OnPropertyChanged(); }
+            set { _content = value; OnPropertyChanged(); OnPropertyChanged(nameof(CanExport)); }
         }
 
         /// <summary>True while the assistant is still streaming a response.</summary>
         public bool IsStreaming
         {
             get => _isStreaming;
-            set { _isStreaming = value; OnPropertyChanged(); OnPropertyChanged(nameof(StatusIcon)); }
+            set { _isStreaming = value; OnPropertyChanged(); OnPropertyChanged(nameof(StatusIcon)); OnPropertyChanged(nameof(CanExport)); }
         }
 
         /// <summary>True when the message represents an API or network error.</summary>
         public bool IsError
         {
             get => _isError;
-            set { _isError = value; OnPropertyChanged(); OnPropertyChanged(nameof(StatusIcon)); }
+            set { _isError = value; OnPropertyChanged(); OnPropertyChanged(nameof(StatusIcon)); OnPropertyChanged(nameof(CanExport)); }
         }
 
         public string RoleDisplayName => Role switch
         {
             MessageRole.User      => "You",
-            MessageRole.Assistant => "Gemini",
+            MessageRole.Assistant => ProviderName,
             MessageRole.System    => "System",
             _                     => "Unknown"
         };
+
+        public bool CanExport => !IsStreaming && !IsError && !string.IsNullOrWhiteSpace(Content);
 
         public string StatusIcon => IsStreaming ? "⏳" : IsError ? "❌" : string.Empty;
     }
