@@ -1,35 +1,11 @@
 @echo off
-echo ========================================
-echo Hidden Gem - Build Script
-echo ========================================
-echo.
-
-echo Restoring NuGet packages...
-dotnet restore
-if %errorlevel% neq 0 goto :error
-
-echo.
-echo Building Release configuration...
-dotnet build -c Release
-if %errorlevel% neq 0 goto :error
-
-echo.
-echo Publishing self-contained executable...
-dotnet publish -c Release -r win-x64 --self-contained false -p:PublishSingleFile=false
-if %errorlevel% neq 0 goto :error
-
-echo.
-echo ========================================
-echo Build completed successfully!
-echo Output: bin\Release\net8.0-windows\win-x64\publish\
-echo ========================================
-goto :end
-
+setlocal
+pushd "%~dp0"
+dotnet publish Assistant.csproj -c Release -r win-x64 -p:Platform=x64 -p:MSBuildEnableWorkloadResolver=false --self-contained false -o "..\release"
+if errorlevel 1 goto :error
+echo App ready: ..\release\HiddenGem.exe
+popd
+exit /b 0
 :error
-echo.
-echo ========================================
-echo Build FAILED!
-echo ========================================
+popd
 exit /b 1
-
-:end

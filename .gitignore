@@ -72,3 +72,4 @@ REPO_DESCRIPTION.txt
 INSTALLER_SETUP.txt
 innosetup-installer.exe
 install-innosetup.cmd
+installer-stage/

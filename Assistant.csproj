@@ -12,7 +12,8 @@
     <Description>AI-powered desktop companion with screen understanding and voice input</Description>
     <Company>Hidden Gem</Company>
     <Copyright>Copyright © 2026</Copyright>
-    <Version>1.0.0</Version>
+    <Version>1.0.4</Version>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Platforms>x64</Platforms>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
@@ -30,6 +31,7 @@
     <PackageReference Include="Hardcodet.NotifyIcon.Wpf"             Version="2.0.1"  />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.Logging"         Version="8.0.1"  />
+    <PackageReference Include="Markdig" Version="1.3.2" />
     <PackageReference Include="NAudio"                               Version="2.2.1"  />
     <PackageReference Include="Serilog"                              Version="3.1.1"  />
     <PackageReference Include="Serilog.Extensions.Logging"          Version="8.0.0"  />
@@ -47,3 +49,4 @@
   </ItemGroup>
 
 </Project>
+

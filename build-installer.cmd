@@ -1,39 +1,19 @@
 @echo off
-echo ========================================
-echo Building Installer
-echo ========================================
-echo.
-
-echo Step 1: Building application...
-call build.cmd
-if %errorlevel% neq 0 goto :error
-
-echo.
-echo Step 2: Creating installer with Inno Setup...
-echo (Make sure Inno Setup is installed: https://jrsoftware.org/isinfo.php)
-echo.
-
-if not exist "C:\Program Files\Inno Setup 7\ISCC.exe" (
-    echo ERROR: Inno Setup not found!
-    echo Please install from: https://jrsoftware.org/isinfo.php
+setlocal
+pushd "%~dp0"
+dotnet publish Assistant.csproj -c Release -r win-x64 -p:Platform=x64 -p:MSBuildEnableWorkloadResolver=false --self-contained true -o installer-stage
+if errorlevel 1 goto :error
+set "TASK_ISCC="
+for %%P in ("C:\Program Files\Inno Setup 7\ISCC.exe" "C:\Program Files\Inno Setup 6\ISCC.exe" "C:\Program Files (x86)\Inno Setup 6\ISCC.exe") do if exist "%%~P" if not defined TASK_ISCC set "TASK_ISCC=%%~P"
+if not defined TASK_ISCC (
+    echo ERROR: Install Inno Setup 6 or 7 to build the installer.
     goto :error
 )
-
-"C:\Program Files\Inno Setup 7\ISCC.exe" installer.iss
-if %errorlevel% neq 0 goto :error
-
-echo.
-echo ========================================
-echo Installer created successfully!
-echo Output: installer-output\HiddenGem-Setup-v1.0.0.exe
-echo ========================================
-goto :end
-
+"%TASK_ISCC%" installer.iss
+if errorlevel 1 goto :error
+echo Installer ready in installer-output. Includes Windows uninstall registration and uninstall shortcuts.
+popd
+exit /b 0
 :error
-echo.
-echo ========================================
-echo Build FAILED!
-echo ========================================
+popd
 exit /b 1
-
-:end
