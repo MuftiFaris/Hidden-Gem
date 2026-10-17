@@ -5,7 +5,7 @@
 ### For End Users
 
 1. **Download Installer**
-   - Get `HiddenGem-Setup-v1.0.0.exe`
+   - Get `HiddenGem-Setup-v1.0.4.exe`
    - Run installer
    - Follow on-screen instructions
    - Launch from Start Menu
@@ -246,7 +246,7 @@ dotnet publish -c Release -r win-x64 --self-contained false
    ```
 
 3. **Output**
-   - Location: `installer-output\HiddenGem-Setup-v1.0.0.exe`
+   - Location: `installer-output\HiddenGem-Setup-v1.0.4.exe`
    - Size: ~6 MB (framework-dependent)
 
 #### Customize Installer

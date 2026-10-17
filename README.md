@@ -2,7 +2,7 @@
 
 A sleek Windows desktop application powered by Google's Gemini API, featuring screen understanding, voice input, and an always-on-top overlay window.
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Version](https://img.shields.io/badge/version-1.0.4-blue)
 ![.NET](https://img.shields.io/badge/.NET-8.0-purple)
 ![Platform](https://img.shields.io/badge/platform-Windows%2010/11-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -37,7 +37,7 @@ A sleek Windows desktop application powered by Google's Gemini API, featuring sc
 
 #### Option 1: Download Installer (Recommended)
 1. Go to [Releases](../../releases/latest)
-2. Download `HiddenGem-Setup-v1.0.0.exe`
+2. Download `HiddenGem-Setup-v1.0.4.exe`
 3. Run installer
 4. Launch from Start Menu
 

@@ -375,6 +375,6 @@ MIT License - See LICENSE file
 ---
 
 **Last Updated**: September 2026
-**Current Version**: 1.0.0
+**Current Version**: 1.0.4
 **Platform**: Windows 10/11 (x64)
 **Framework**: .NET 8.0
