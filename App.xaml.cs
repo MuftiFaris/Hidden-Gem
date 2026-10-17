@@ -72,6 +72,7 @@ namespace Assistant
             sc.AddSingleton<IAudioCaptureService, AudioCaptureService>();
             sc.AddSingleton<IAudioTranscriptionService, AudioTranscriptionService>();
             sc.AddSingleton<IAutoResponseService, AutoResponseService>();
+            sc.AddSingleton<LiveInterviewService>();
 
             // View-models (singletons so nav state persists between page switches)
             sc.AddSingleton<ChatViewModel>();
@@ -106,3 +107,4 @@ namespace Assistant
         }
     }
 }
+

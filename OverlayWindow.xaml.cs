@@ -14,6 +14,7 @@ namespace Assistant
         private readonly IScreenCaptureService _screenCapture;
         private readonly ISpeechService _speech;
         private readonly ICredentialService _creds;
+        private readonly ISettingsService? _settings;
         private readonly ILogger<OverlayWindow> _logger;
         private bool _isPinned;
 
@@ -22,13 +23,14 @@ namespace Assistant
             IScreenCaptureService screenCapture,
             ISpeechService speech,
             ICredentialService creds,
-            ILogger<OverlayWindow> logger)
+            ILogger<OverlayWindow> logger, ISettingsService? settings = null)
         {
             _gemini = gemini;
             _screenCapture = screenCapture;
             _speech = speech;
             _creds = creds;
             _logger = logger;
+            _settings = settings;
 
             InitializeComponent();
             
@@ -76,6 +78,8 @@ namespace Assistant
 
         private async void VoiceButton_Click(object sender, RoutedEventArgs e)
         {
+            var button = sender as System.Windows.Controls.Button;
+            if (button != null) button.IsEnabled = false;
             try
             {
                 if (!_speech.IsAvailable())
@@ -96,14 +100,14 @@ namespace Assistant
 
                 ResponseText.Text = $"You said: {speechText}\n\nProcessing...";
 
-                var apiKey = _creds.GetApiKey();
+                var settings = _settings?.Load() ?? new Models.AppSettings();
+                var apiKey = _creds.GetApiKey(settings.Provider);
                 if (string.IsNullOrEmpty(apiKey))
                 {
                     ResponseText.Text = "❌ No API key configured.";
                     return;
                 }
 
-                var settings = new Models.AppSettings();
                 var response = await _gemini.SendMessageAsync(
                     new System.Collections.Generic.List<Models.ChatMessage>
                     {
@@ -119,44 +123,44 @@ namespace Assistant
                 _logger.LogError(ex, "Voice input failed");
                 ResponseText.Text = $"❌ Error: {ex.Message}";
             }
+            finally { if (button != null) button.IsEnabled = true; }
         }
 
         private async void ScreenButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                ResponseText.Text = "📷 Capturing screen...";
+                ResponseText.Text = "📷 Capturing center screen...";
 
-                var screenshot = await _screenCapture.CaptureFullScreenAsync();
+                var screenshot = await _screenCapture.CaptureCenterScreenAsync(0.70, 0.70);
                 var base64 = _screenCapture.BitmapToBase64(screenshot);
                 screenshot.Dispose();
 
-                var apiKey = _creds.GetApiKey();
+                var settings = _settings?.Load() ?? new Models.AppSettings();
+                var apiKey = _creds.GetApiKey(settings.Provider);
                 if (string.IsNullOrEmpty(apiKey))
                 {
                     ResponseText.Text = "❌ No API key configured.";
                     return;
                 }
 
-                ResponseText.Text = "🤖 Analyzing screen...";
+                ResponseText.Text = "🤖 Solving interview question / case...";
 
-                var settings = new Models.AppSettings();
                 
-                // Enhanced prompt - analyze AND solve what's on screen
-                var prompt = @"ANALYZE THIS SCREENSHOT CAREFULLY:
+                var prompt = @"TARGET: Solve live technical interview question / test displayed in the screenshot.
 
-1. IDENTIFY: What applications, errors, code, or problems are visible?
-2. EXPLAIN: What is happening on screen?
-3. SOLVE: If there's an error or problem, provide the solution
-4. ANSWER: Be ready to answer questions about this screen
+INSTRUCTIONS:
+1. Focus directly on the problem, case study, multiple choice question, or code snippet in the center of the screen.
+2. Provide the DIRECT ANSWER immediately.
+3. If code or algorithm is requested, write clean, optimal, production-ready code with minimal explanation.
+4. If multiple choice / scenario, state the EXACT correct option and 1-sentence crisp reason.
 
-Provide a comprehensive analysis. If you see:
-- ERROR MESSAGES: Explain what went wrong and how to fix it
-- CODE: Analyze it and explain what it does
-- PROBLEMS: Provide step-by-step solutions
-- UI: Describe what you see and what actions are available
+FORMAT:
+🎯 **Direct Answer / TL;DR**: (What candidate should say immediately)
+💻 **Code / Detailed Solution**: (If applicable)
+💡 **Key Explanation Points**: (Brief bullet points for follow-up questions)
 
-Do NOT just describe. ANALYZE and PROVIDE ACTIONABLE INSIGHTS.";
+RESPONSE:";
 
                 var response = await _gemini.SendVisionMessageAsync(
                     prompt,
@@ -164,7 +168,7 @@ Do NOT just describe. ANALYZE and PROVIDE ACTIONABLE INSIGHTS.";
                     apiKey,
                     settings);
 
-                ResponseText.Text = $"Screen Analysis:\n\n{response}";
+                ResponseText.Text = response;
             }
             catch (Exception ex)
             {

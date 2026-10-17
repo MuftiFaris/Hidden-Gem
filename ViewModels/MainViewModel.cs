@@ -89,6 +89,7 @@ namespace Assistant.ViewModels
             ChatVM      = chatVM;
             SettingsVM  = settingsVM;
             InterviewVM = interviewVM;
+            settingsVM.SettingsSaved += (_, _) => chatVM.RefreshSettings();
             _settingsSvc = settingsSvc;
             _logger      = logger;
             _services    = services;

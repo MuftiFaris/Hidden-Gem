@@ -7,6 +7,7 @@
         xmlns:vm="clr-namespace:Assistant.ViewModels"
         mc:Ignorable="d"
         Title="Hidden Gem"
+        Icon="Assets/app.ico"
         Height="720" Width="1050"
         MinHeight="520" MinWidth="720"
         WindowStyle="None"
@@ -53,7 +54,7 @@
                 <Grid>
                     <!-- App identity -->
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0">
-                        <TextBlock Text="💎" FontSize="15" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                        <Image Source="/Assets/app.png" Width="20" Height="20" Margin="0,0,10,0"/>
                         <TextBlock Text="Hidden Gem"
                                    FontWeight="SemiBold" FontSize="13"
                                    Foreground="{StaticResource PrimaryTextBrush}"
