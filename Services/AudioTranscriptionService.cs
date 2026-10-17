@@ -46,7 +46,7 @@ namespace Assistant.Services
             float[] samples,
             string apiKey,
             int sampleRate = 16000,
-            CancellationToken ct = default)
+            CancellationToken ct = default, AppSettings? settings = null)
         {
             try
             {
@@ -66,43 +66,17 @@ namespace Assistant.Services
                 _logger.LogDebug("Encoded audio: {Bytes} bytes → {Base64} base64", 
                     wavBytes.Length, base64Audio.Length);
 
-                // Send to Gemini API
-                var prompt = "Transcribe this audio. Return ONLY the transcription text, nothing else. " +
-                            "If you cannot understand the audio, return [INAUDIBLE].";
-
-                // Build a minimal request for audio analysis
-                var request = new
-                {
-                    contents = new[]
-                    {
-                        new
-                        {
-                            role = "user",
-                            parts = new object[]
-                            {
-                                new { text = prompt },
-                                new { inlineData = new { mimeType = "audio/wav", data = base64Audio } }
-                            }
-                        }
-                    }
-                };
-
-                // Send to Gemini
-                var history = new List<ChatMessage>();  // Empty history for one-off transcription
-                var result = await _gemini.SendMessageAsync(history, apiKey, new Models.AppSettings
-                {
-                    SelectedModel = "gemini-3.5-flash",
-                    Temperature = 0.3,  // Lower temperature for accurate transcription
-                    MaxOutputTokens = 1024
-                }, ct).ConfigureAwait(false);
+                var connection = settings ?? new AppSettings();
+                var result = await _gemini.SendAudioMessageAsync(wavBytes, apiKey,
+                    new AppSettings { Provider = connection.Provider, RouterBaseUrl = connection.RouterBaseUrl, RouterTranscriptionModel = connection.RouterTranscriptionModel, RequestTimeoutSeconds = connection.RequestTimeoutSeconds, SelectedModel = connection.SelectedModel, Temperature = 0, MaxOutputTokens = 2048 }, ct).ConfigureAwait(false);
 
                 _logger.LogInformation("Transcription received: {Length} characters", result.Length);
-                return result.Trim();
+                return result.Trim() == "[INAUDIBLE]" ? string.Empty : result.Trim();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Audio transcription failed");
-                return string.Empty;
+                throw;
             }
         }
 

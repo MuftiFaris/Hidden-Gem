@@ -1,3 +1,4 @@
+using Assistant.Models;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -23,6 +24,6 @@ namespace Assistant.Services
             float[] samples,
             string apiKey,
             int sampleRate = 16000,
-            CancellationToken ct = default);
+            CancellationToken ct = default, AppSettings? settings = null);
     }
 }

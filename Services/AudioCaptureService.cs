@@ -26,7 +26,8 @@ namespace Assistant.Services
         private IWaveIn? _waveIn;
         private WaveFileWriter? _waveFileWriter;
         private List<float> _audioBuffer = new();
-        private bool _isRecording;
+        private long _lastSpeechTicks;
+        public DateTime LastSpeechUtc => new DateTime(Interlocked.Read(ref _lastSpeechTicks), DateTimeKind.Utc);
 
         public event EventHandler<bool>? IsRecordingChanged;
         public event EventHandler<float[]>? AudioFrameReady;  // 16-bit PCM samples normalized to [-1, 1]
@@ -58,7 +59,7 @@ namespace Assistant.Services
                         {
                             Id = device.ID,
                             Name = device.FriendlyName,
-                            IsLoopback = false  // These become loopback sources via WASAPI
+                            IsLoopback = true  // These become loopback sources via WASAPI
                         });
                     }
 
@@ -115,8 +116,8 @@ namespace Assistant.Services
                     _waveIn.DataAvailable += OnAudioDataAvailable;
                     _waveIn.RecordingStopped += OnRecordingStopped;
 
-                    _audioBuffer.Clear();
-                    _isRecording = true;
+                    ClearBuffer();
+                    Interlocked.Exchange(ref _lastSpeechTicks, 0);
                     IsRecordingChanged?.Invoke(this, true);
 
                     _waveIn.StartRecording();
@@ -128,7 +129,6 @@ namespace Assistant.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to start audio capture");
-                _isRecording = false;
                 IsRecordingChanged?.Invoke(this, false);
                 return false;
             }
@@ -156,18 +156,15 @@ namespace Assistant.Services
                     _waveFileWriter = null;
                 }
 
-                _isRecording = false;
                 IsRecordingChanged?.Invoke(this, false);
 
-                var result = _audioBuffer.ToArray();
-                _audioBuffer.Clear();
+                var result = TakeCurrentBuffer();
 
                 return result;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error stopping audio capture");
-                _isRecording = false;
                 IsRecordingChanged?.Invoke(this, false);
                 return Array.Empty<float>();
             }
@@ -177,6 +174,18 @@ namespace Assistant.Services
         /// Gets accumulated audio buffer without stopping recording.
         /// Useful for progressive analysis while still recording.
         /// </summary>
+        public int SampleRate => _waveIn?.WaveFormat.SampleRate ?? 16000;
+
+        public float[] TakeCurrentBuffer()
+        {
+            lock (_audioBuffer)
+            {
+                var samples = _audioBuffer.ToArray();
+                _audioBuffer.Clear();
+                return samples;
+            }
+        }
+
         public float[] GetCurrentBuffer()
         {
             lock (_audioBuffer)
@@ -226,10 +235,14 @@ namespace Assistant.Services
             {
                 // Convert byte buffer to float samples (16-bit PCM)
                 var floatSamples = ConvertBytesToFloat(e.Buffer, e.BytesRecorded);
+                if (floatSamples.Length > 0 && Math.Sqrt(floatSamples.Average(x => x * x)) > 0.008)
+                    Interlocked.Exchange(ref _lastSpeechTicks, DateTime.UtcNow.Ticks);
 
                 lock (_audioBuffer)
                 {
                     _audioBuffer.AddRange(floatSamples);
+                    int maxSamples = SampleRate * 30;
+                    if (_audioBuffer.Count > maxSamples) _audioBuffer.RemoveRange(0, _audioBuffer.Count - maxSamples);
                 }
 
                 // Fire event for real-time analysis
@@ -257,14 +270,26 @@ namespace Assistant.Services
         /// </summary>
         private float[] ConvertBytesToFloat(byte[] buffer, int bytesRecorded)
         {
-            var floatBuffer = new float[bytesRecorded / 2];
-
-            for (int i = 0; i < floatBuffer.Length; i++)
+            var format = _waveIn!.WaveFormat;
+            int bytesPerSample = format.BitsPerSample / 8;
+            int frames = bytesRecorded / format.BlockAlign;
+            var floatBuffer = new float[frames];
+            bool floating = format.Encoding == WaveFormatEncoding.IeeeFloat ||
+                (format is WaveFormatExtensible ext && ext.SubFormat == new Guid("00000003-0000-0010-8000-00aa00389b71"));
+            for (int i = 0; i < frames; i++)
             {
-                // Read 16-bit signed int (little-endian)
-                short sample = BitConverter.ToInt16(buffer, i * 2);
-                // Normalize to [-1, 1]
-                floatBuffer[i] = sample / 32768f;
+                double sum = 0;
+                for (int channel = 0; channel < format.Channels; channel++)
+                {
+                    int offset = i * format.BlockAlign + channel * bytesPerSample;
+                    sum += floating && format.BitsPerSample == 32 ? BitConverter.ToSingle(buffer, offset) :
+                        format.BitsPerSample == 16 ? BitConverter.ToInt16(buffer, offset) / 32768f :
+                        format.BitsPerSample == 24 ? ((buffer[offset] | buffer[offset + 1] << 8 | buffer[offset + 2] << 16) << 8 >> 8) / 8388608f :
+                        format.BitsPerSample == 32 ? BitConverter.ToInt32(buffer, offset) / 2147483648f :
+                        format.BitsPerSample == 8 ? (buffer[offset] - 128) / 128f :
+                        throw new NotSupportedException($"Unsupported audio format: {format}");
+                }
+                floatBuffer[i] = (float)(sum / format.Channels);
             }
 
             return floatBuffer;

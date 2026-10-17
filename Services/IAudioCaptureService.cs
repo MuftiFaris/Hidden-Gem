@@ -42,6 +42,9 @@ namespace Assistant.Services
         /// Gets current audio buffer without stopping recording.
         /// Useful for progressive analysis or silence detection while recording.
         /// </summary>
+        DateTime LastSpeechUtc { get; }
+        int SampleRate { get; }
+        float[] TakeCurrentBuffer();
         float[] GetCurrentBuffer();
 
         /// <summary>
