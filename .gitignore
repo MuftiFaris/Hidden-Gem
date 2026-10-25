@@ -73,3 +73,15 @@ INSTALLER_SETUP.txt
 innosetup-installer.exe
 install-innosetup.cmd
 installer-stage/
+
+# Local design metadata and redundant working notes
+.hallmark/
+RELEASE_NOTES_*.txt
+FEATURES_SUMMARY.md
+DEPENDENCIES.md
+SETUP_GUIDE.md
+INTERVIEW_GUIDE.md
+QUICKSTART.txt
+LIVE_ASSISTANT.txt
+RELEASE_SPEC*
+RELEASE_DESCRIPTION*

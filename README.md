@@ -1,298 +1,44 @@
-# Hidden Gem - AI Desktop Companion
+# Hidden Gem
 
-A sleek Windows desktop application powered by Google's Gemini API, featuring screen understanding, voice input, and an always-on-top overlay window.
+Windows desktop assistant built with WPF and .NET 8.
 
-![Version](https://img.shields.io/badge/version-1.0.4-blue)
-![.NET](https://img.shields.io/badge/.NET-8.0-purple)
-![Platform](https://img.shields.io/badge/platform-Windows%2010/11-lightgrey)
-![License](https://img.shields.io/badge/license-MIT-green)
+- Gemini or 9Router / OpenAI-compatible APIs.
+- Streaming chat, selectable Markdown, copy actions, DOCX/Markdown/TXT export.
+- Selected-window analysis and speaker transcription.
+- API keys stored separately by provider in Windows Credential Manager.
 
-> 💡 **Fully customizable branding** - Change app name, icon, and appearance to match your preferences. See [Customization Guide](#-customization) below.
+## Install
 
-## ✨ Features
+Run the latest `HiddenGem-Setup-v*.exe` from `../release/`.
+Exit the running app from its tray menu before upgrading.
+The installer includes the .NET runtime and an uninstaller.
+Uninstall through Windows **Installed apps → Hidden Gem** or the Start Menu shortcut.
 
-- **💬 Smart Chat Interface** - Natural conversations with streaming responses
-- **📷 Screen Understanding** - Capture and analyze screen content with AI vision
-- **🎤 Voice Input** - Speech-to-text using Windows Speech Recognition
-- **🪟 Floating Overlay** - Customizable always-on-top assistant window
-- **🔒 Privacy Mode** - Block screen capture with Windows Display Affinity
-- **🔐 Secure Storage** - API keys stored in Windows Credential Manager
-- **📊 Real-time Streaming** - See AI responses as they're generated
-- **🎨 Modern UI** - Clean WPF interface with transparency effects
-- **🎯 Interview Assistant** - Auto-respond to interview questions (NEW!)
-  - Captures audio from Zoom, Discord, GMeet speakers
-  - Transcribes questions automatically
-  - Generates intelligent responses with screen context
-  - Perfect for quick reference during live interviews
+## Build
 
-## 🚀 Quick Start
+Requires the .NET 8+ SDK; installer builds also need Inno Setup 6 or 7.
 
-### Prerequisites
-
-- Windows 10 (1809+) or Windows 11 (64-bit)
-- [.NET 8.0 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
-- [Google Gemini API Key](https://ai.google.dev/) (free)
-
-### Installation
-
-#### Option 1: Download Installer (Recommended)
-1. Go to [Releases](../../releases/latest)
-2. Download `HiddenGem-Setup-v1.0.4.exe`
-3. Run installer
-4. Launch from Start Menu
-
-#### Option 2: Build from Source
-```bash
-git clone https://github.com/MuftiFaris/Hidden-Gem
-cd Assistant
-dotnet restore
-dotnet build -c Release
+```powershell
+.\build.cmd
+.\build-installer.cmd
 ```
 
-## 📖 Usage
+Outputs, relative to this repository:
 
-### First-Time Setup
-1. Launch the application
-2. Go to **Settings**
-3. Enter your Gemini API key
-4. Click **Save & Test**
-5. Start chatting!
+- `../release/HiddenGem-Setup-v<version>.exe`: installer.
+- `../release/app/HiddenGem.exe`: app with supporting files.
+- `installer-stage/`: temporary packaging output.
 
-### Voice Input
-1. Click **🎤 Voice** button
-2. Speak when prompted
-3. Your speech is converted to text and sent to AI
+Build output, local design metadata, and working notes are excluded from Git.
+Keep code, assets, build scripts, README, and LICENSE in the repository.
+Installers belong in GitHub Releases when publishing, rather than source commits.
 
-### Screen Analysis
-1. Click **📷 Screen** button
-2. Screen is captured automatically
-3. AI describes what it sees
+## Connect
 
-### Interview Assistant (NEW!)
-1. Go to **Interview** tab
-2. Click **🎤 Start Listening** to begin audio capture from Zoom/Discord/GMeet
-3. Enable **Auto-Response** toggle
-4. System automatically:
-   - Listens for interview questions
-   - Captures screen context
-   - Generates intelligent answers
-   - Displays response for review
-5. Copy response to clipboard and paste into chat
-6. Review exchange history below
-
-#### Interview Features
-- **Real-time Audio Capture**: Captures speaker audio from any app
-- **Question Detection**: Recognizes patterns (e.g., "tell me about", "how would you")
-- **Smart Context**: Combines screen + audio for informed responses
-- **History Tracking**: Keeps record of all Q&A exchanges
-- **Copy-to-Clipboard**: Quick paste into chat or anywhere
-
-### Overlay Window
-- Click **Overlay** in sidebar
-- Drag to reposition
-- Adjust opacity with slider
-- Pin to keep always-on-top
-
-## ⚙️ Configuration
-
-### Available AI Models
-- `gemini-1.5-flash` - Fastest (recommended)
-- `gemini-1.5-pro` - Most capable
-- `gemini-2.0-flash-exp` - Experimental
-
-### Settings Location
-- **User Settings**: `%LOCALAPPDATA%\HiddenGem\settings.json`
-- **API Key**: Windows Credential Manager (encrypted)
-- **Logs**: `%LOCALAPPDATA%\HiddenGem\logs\`
-
-## 🎨 Customization
-
-### Changing App Name and Branding
-
-**This app is fully customizable!** By default, it builds as "HiddenGem" for personal use, but you can rebrand it to anything you want.
-
-#### Quick Rebrand (Recommended)
-
-Want it to look like a professional app? Change these files:
-
-#### 1. Application Name
-**File**: `Assistant.csproj`
-```xml
-<AssemblyName>YourAppName</AssemblyName>
-<Product>Your App Name</Product>
-<Company>Your Company</Company>
-```
-
-#### 2. Window Title
-**File**: `MainWindow.xaml`
-```xml
-Title="Your App Name"
-```
-
-#### 3. App Icon/Emoji
-**File**: `MainWindow.xaml` (line ~62)
-```xml
-<TextBlock Text="🌊" FontSize="15" .../>  <!-- Change emoji here -->
-<TextBlock Text="Your App Name" .../>
-```
-
-#### 4. Storage Paths
-**File**: `App.xaml.cs` (line ~67)
-```csharp
-var logDir = Path.Combine(
-    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-    "YourAppName", "logs");
-```
-
-**File**: `Services/SettingsService.cs` (line ~21)
-```csharp
-"YourAppName");  // Change folder name
-```
-
-#### 5. Credential Manager Key
-**File**: `Services/CredentialManagerService.cs` (line ~26)
-```csharp
-private const string CredentialTarget = "YourAppName_ApiKey";
-```
-
-**File**: `Services/CredentialManagerService.cs` (line ~56)
-```csharp
-Comment = "Your App Name — API Key",
-```
-
-#### 6. Installer Branding
-**File**: `installer.iss`
-```ini
-#define AppName "Your App Name"
-#define AppPublisher "Your Company"
-```
-
-### Adding Your Logo
-
-Replace the wave emoji (🌊) with:
-- Custom icon file (`.ico`)
-- Different emoji
-- Image resource
-
-For custom icon:
-1. Add icon to `Assets/` folder
-2. Update `MainWindow.xaml`:
-```xml
-<Image Source="/Assets/yourlogo.png" Width="16" Height="16" />
-```
-
-## 🏗️ Project Structure
-
-```
-├── Models/           # Data models
-├── Services/         # Business logic
-│   ├── GeminiService.cs
-│   ├── ScreenCaptureService.cs
-│   └── SpeechService.cs
-├── ViewModels/       # MVVM view models
-├── Views/            # XAML views
-├── Helpers/          # Utilities
-├── Resources/        # Styles, themes
-└── Assets/           # Icons, images
-```
-
-## 🔧 Development
-
-### Requirements
-- Visual Studio 2022 or VS Code
-- .NET 8.0 SDK
-- Windows 10 SDK
-
-### Building
-```bash
-# Debug build
-dotnet build
-
-# Release build
-dotnet build -c Release
-
-# Run
-dotnet run
-
-# Create installer (requires Inno Setup)
-build-installer.cmd
-```
-
-### Tech Stack
-- **Framework**: WPF (.NET 8.0)
-- **Architecture**: MVVM
-- **DI**: Microsoft.Extensions.DependencyInjection
-- **Logging**: Serilog
-- **API**: Google Gemini REST API
-- **Graphics**: System.Drawing (GDI+)
-- **Speech**: System.Speech
-
-## 🔒 Privacy & Security
-
-- **API Keys**: Stored encrypted in Windows Credential Manager
-- **Conversations**: NOT logged by default
-- **Screen Capture**: On-demand only, user-initiated
-- **Privacy Mode**: Blocks most screen recording tools
-- **Logs**: Only errors and metadata (no content)
-
-## 📝 License
-
-MIT License - See [LICENSE](LICENSE) for details
-
-## ⚖️ Legal Disclaimer
-
-- **No Affiliation**: Not affiliated with any company
-- **Gemini API**: Powered by Google's Gemini API - [Terms of Service](https://ai.google.dev/terms)
-- **For Personal/Educational Use**: This project is for learning and personal use
-
-## 🎨 Customization
-
-**This is a template project.** Fork it and customize for your needs:
-- Change branding (see [Customization Guide](#-customization))
-- Modify UI/UX
-- Add your own features
-- Use for personal projects
-
-**Note:** This repo is for sharing the template, not accepting public contributions.
-
-## ⚠️ Troubleshooting
-
-### "No API key found"
-- Go to Settings → Enter API key → Save & Test
-
-### "Speech not available"
-- Enable Windows Speech Recognition
-- Windows Settings → Speech
-
-### ".NET not found"
-- Install [.NET 8.0 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
-
-### Build errors
-```bash
-# Clean build
-dotnet clean
-dotnet restore
-dotnet build
-```
-
-## 📚 Documentation
-
-- [Setup Guide](SETUP_GUIDE.md) - Developer setup
-- [Dependencies](DEPENDENCIES.md) - All dependencies
-- [Quick Start](QUICKSTART.txt) - User guide
-
-## 🌟 Credits
-
-- **Google Gemini API** - https://ai.google.dev/
-- **Serilog** - Structured logging
-- **.NET Team** - Application framework
-
-## 📬 Support
-
-- **Issues**: [GitHub Issues](../../issues)
-- **Logs**: `%LOCALAPPDATA%\HiddenGem\logs\`
-- **API Status**: [Google Cloud Status](https://status.cloud.google.com/)
-
----
-
-**Note**: This is an unofficial project and is not affiliated with Microsoft or Google.
+In Settings, select the provider and save its API key.
+For local 9Router, keep its server running and use its dashboard URL/key;
+the default API URL is `http://localhost:20128/v1`.
+Refresh models, choose the exact model ID, save, and test the connection.
+Models are not necessarily free; provider pricing and quotas apply.
+Screen analysis requires vision support; 9Router voice requires an STT route/model.
+Keep the selected window visible. Capture privacy is a Windows request, not a guarantee.

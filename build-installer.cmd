@@ -11,7 +11,7 @@ if not defined TASK_ISCC (
 )
 "%TASK_ISCC%" installer.iss
 if errorlevel 1 goto :error
-echo Installer ready in installer-output. Includes Windows uninstall registration and uninstall shortcuts.
+echo Installer ready in ..\release. Includes Windows uninstall registration and uninstall shortcuts.
 popd
 exit /b 0
 :error
